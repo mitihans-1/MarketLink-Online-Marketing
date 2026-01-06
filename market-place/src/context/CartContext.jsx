@@ -1,6 +1,6 @@
-// This file ONLY creates and exports the context object
+// src/context/CartContext.jsx
 import { createContext } from 'react';
 
+// Create and export the context
 const CartContext = createContext();
-
 export default CartContext;

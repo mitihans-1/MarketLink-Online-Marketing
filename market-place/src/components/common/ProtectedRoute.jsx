@@ -1,41 +1,42 @@
-﻿import { Navigate } from 'react-router-dom';
-import PropTypes from 'prop-types'; // Add this
-import { useAuth } from '../../context';
-import LoadingSpinner from './LoadingSpinner';
+﻿// src/components/common/ProtectedRoute.jsx
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth';
 
 const ProtectedRoute = ({ children, requireAdmin = false, requireSeller = false }) => {
   const { user, loading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
+  // Debug log
+  console.log('ProtectedRoute Check:', {
+    isAuthenticated,
+    user,
+    path: location.pathname,
+    requireAdmin,
+    requireSeller
+  });
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    // Redirect to login, but save where they wanted to go
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   if (requireAdmin && user?.role !== 'admin') {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (requireSeller && user?.role !== 'seller') {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
-};
-
-// Add PropTypes validation
-ProtectedRoute.propTypes = {
-  children: PropTypes.node.isRequired,
-  requireAdmin: PropTypes.bool,
-  requireSeller: PropTypes.bool
-};
-
-// Add default props (optional)
-ProtectedRoute.defaultProps = {
-  requireAdmin: false,
-  requireSeller: false
 };
 
 export default ProtectedRoute;

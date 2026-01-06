@@ -1,30 +1,60 @@
-﻿import React, { useState, useCallback, useMemo } from 'react';
+﻿// src/context/CartProvider.jsx
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import CartContext from './CartContext';
 
 const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  // Lazy initialization for cart items - runs once on mount
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error('Error loading cart:', error);
+      return [];
+    }
+  });
+  
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Mark as initialized after mount (no setState in this effect)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 0);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Save cart to localStorage when it changes
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    try {
+      localStorage.setItem('cart', JSON.stringify(cartItems));
+    } catch (error) {
+      console.error('Error saving cart:', error);
+    }
+  }, [cartItems, isInitialized]);
 
   // Add item to cart
   const addToCart = useCallback((product, quantity = 1) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      
-      if (existingItem) {
-        return prevItems.map(item =>
-          item.id === product.id
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === product.id 
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      
-      return [...prevItems, { ...product, quantity }];
+      return [...prev, { ...product, quantity }];
     });
   }, []);
 
   // Remove item from cart
   const removeFromCart = useCallback((productId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+    setCartItems(prev => prev.filter(item => item.id !== productId));
   }, []);
 
   // Update item quantity
@@ -33,28 +63,28 @@ const CartProvider = ({ children }) => {
       removeFromCart(productId);
       return;
     }
-    
-    setCartItems(prevItems =>
-      prevItems.map(item =>
+    setCartItems(prev => 
+      prev.map(item => 
         item.id === productId ? { ...item, quantity } : item
       )
     );
   }, [removeFromCart]);
 
-  // Clear cart
+  // Clear entire cart
   const clearCart = useCallback(() => {
     setCartItems([]);
   }, []);
 
-  // Calculate total items in cart
-  const totalItems = useMemo(() => 
-    cartItems.reduce((total, item) => total + item.quantity, 0),
-    [cartItems]
-  );
+  // Calculate cart total
+  const getCartTotal = useCallback(() => {
+    return cartItems.reduce((total, item) => 
+      total + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0
+    );
+  }, [cartItems]);
 
-  // Calculate total price
-  const totalPrice = useMemo(() =>
-    cartItems.reduce((total, item) => total + (item.price * item.quantity), 0),
+  // Calculate item count
+  const cartCount = useMemo(() => 
+    cartItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
     [cartItems]
   );
 
@@ -64,32 +94,27 @@ const CartProvider = ({ children }) => {
     [cartItems]
   );
 
-  // Get item quantity
-  const getItemQuantity = useCallback((productId) => {
-    const item = cartItems.find(item => item.id === productId);
-    return item ? item.quantity : 0;
-  }, [cartItems]);
-
+  // Memoized context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     cartItems,
+    cartCount,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-    totalItems,
-    totalPrice,
+    getCartTotal,
     isInCart,
-    getItemQuantity,
+    isInitialized
   }), [
     cartItems,
+    cartCount,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-    totalItems,
-    totalPrice,
+    getCartTotal,
     isInCart,
-    getItemQuantity,
+    isInitialized
   ]);
 
   return (
@@ -99,9 +124,7 @@ const CartProvider = ({ children }) => {
   );
 };
 
-// Add PropTypes validation for children
 CartProvider.propTypes = {
-  /** The child components that will have access to the cart context */
   children: PropTypes.node.isRequired,
 };
 

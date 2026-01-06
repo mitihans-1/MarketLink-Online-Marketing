@@ -1,8 +1,8 @@
 // src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth.jsx';
 
-// Import ONLY pages that exist
+// Import pages that exist
 import HomePage from '../pages/HomePage';
 import ProductsPage from '../pages/ProductsPage';
 import ProductDetailPage from '../pages/ProductDetailPage';
@@ -15,32 +15,24 @@ import SellerDashboardPage from '../pages/SellerDashboardPage';
 import ProfilePage from '../pages/ProfilePage';
 import OrdersPage from '../pages/OrdersPage';
 import CategoriesPage from '../pages/CategoriesPage';
+import CategoryPage from '../pages/CategoryPage';
 import SettingsPage from '../pages/SettingsPage';
 import WishlistPage from '../pages/WishlistPage';
+import SearchPage from '../pages/SearchPage';
 import NotFoundPage from '../pages/NotFoundPage';
 
-// Simple placeholder pages for missing routes
-const HelpPage = () => <div className="p-8"><h1>Help</h1><p>Help page</p></div>;
-const CategoryPage = () => {
-  const params = new URLSearchParams(window.location.search);
-  const category = params.get('category') || 'all';
-  return <div className="p-8"><h1>Category: {category}</h1></div>;
-};
-const SearchPage = () => {
-  const params = new URLSearchParams(window.location.search);
-  const query = params.get('q') || '';
-  return <div className="p-8"><h1>Search: {query}</h1></div>;
-};
-const TermsPage = () => <div className="p-8"><h1>Terms</h1></div>;
-const PrivacyPage = () => <div className="p-8"><h1>Privacy</h1></div>;
-const SellerRegisterPage = () => <div className="p-8"><h1>Become a Seller</h1></div>;
-
-// Layouts
-import MainLayout from '../components/layout/MainLayout';
+// Import layouts
 import DashboardLayout from '../components/layout/DashboardLayout';
 import AdminLayout from '../components/layout/AdminLayout';
 import SellerLayout from '../components/layout/SellerLayout';
 import ProtectedRoute from '../components/common/ProtectedRoute';
+
+// Simple placeholder pages for missing routes
+const HelpPage = () => <div className="p-8"><h1>Help</h1><p>Help page</p></div>;
+const TermsPage = () => <div className="p-8"><h1>Terms</h1></div>;
+const PrivacyPage = () => <div className="p-8"><h1>Privacy</h1></div>;
+const SellerRegisterPage = () => <div className="p-8"><h1>Become a Seller</h1></div>;
+const CheckoutPage = () => <div className="p-8"><h1>Checkout</h1></div>;
 
 const AppRoutes = () => {
   const { loading } = useAuth();
@@ -55,12 +47,12 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Public Routes - NO MainLayout wrapper here */}
+      {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/product/:id" element={<ProductDetailPage />} />
       <Route path="/categories" element={<CategoriesPage />} />
-      <Route path="/category" element={<CategoryPage />} />
+      <Route path="/category/:categoryId" element={<CategoryPage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -69,7 +61,7 @@ const AppRoutes = () => {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
 
-      {/* Protected Routes - NO MainLayout wrapper */}
+      {/* Protected Routes */}
       <Route path="/cart" element={
         <ProtectedRoute>
           <CartPage />
@@ -97,6 +89,12 @@ const AppRoutes = () => {
       <Route path="/wishlist" element={
         <ProtectedRoute>
           <WishlistPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/checkout" element={
+        <ProtectedRoute>
+          <CheckoutPage />
         </ProtectedRoute>
       } />
 

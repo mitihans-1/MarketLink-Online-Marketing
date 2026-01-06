@@ -1,22 +1,15 @@
 ﻿// src/components/layout/MainLayout.jsx
 import React from 'react';
-import Header from '../common/Header';
 import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
 
 const MainLayout = ({ children }) => {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header and Navbar at top */}
-      <Header />
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-      
-      {/* Main content area */}
-      <main className="flex-1">
+      <main className="flex-1 container mx-auto px-4 py-8">
         {children}
       </main>
-      
-      {/* Footer at bottom */}
       <Footer />
     </div>
   );
