@@ -127,10 +127,10 @@ const CategoryPage = () => {
 
     // Apply additional filters
     if (filters.minPrice) {
-      filteredProducts = filteredProducts.filter(p => p.price >= parseFloat(filters.minPrice));
+      filteredProducts = filteredProducts.filter(p => p.price >= Number.parseFloat(filters.minPrice));
     }
     if (filters.maxPrice) {
-      filteredProducts = filteredProducts.filter(p => p.price <= parseFloat(filters.maxPrice));
+      filteredProducts = filteredProducts.filter(p => p.price <= Number.parseFloat(filters.maxPrice));
     }
     if (filters.inStock) {
       filteredProducts = filteredProducts.filter(p => p.stock > 0);

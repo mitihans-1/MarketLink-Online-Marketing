@@ -1,7 +1,7 @@
 ﻿// src/pages/LoginPage.jsx
 import React, { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom'; // Added useLocation
-import { useAuth } from '../context/useAuth';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/useAuth'; // Import from useAuth.jsx
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
@@ -12,11 +12,11 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const location = useLocation(); // Get current location
+  const location = useLocation();
   const { login } = useAuth();
 
   // Get the page they wanted to go to before login
-  const from = location.state?.from || '/dashboard';
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,20 +29,31 @@ const LoginPage = () => {
       return;
     }
 
-    const result = await login(email, password);
-    
-    if (result.success) {
-      // Redirect to where they wanted to go, or dashboard
-      navigate(from, { replace: true });
-    } else {
-      setError(result.error || 'Login failed. Please try again.');
+    try {
+      // Call the login function from useAuth
+      const result = await login(email, password);
+      
+      console.log('Login result:', result);
+      
+      // Check if result exists and has success property
+      if (result && result.success === true) {
+        // Redirect to where they wanted to go, or dashboard
+        navigate(from, { replace: true });
+      } else {
+        // Handle error - check for different possible error fields
+        const errorMessage = result?.message || result?.error || 'Login failed. Please try again.';
+        setError(errorMessage);
+      }
+    } catch (err) {
+      console.error('Login catch error:', err);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
-  // Quick login for testing
-  const handleQuickLogin = (userType = 'user') => {
+  // Quick login for testing - now with auto-submit
+  const handleQuickLogin = async (userType = 'user') => {
     const testUsers = {
       user: { email: 'user@example.com', password: 'password123' },
       seller: { email: 'seller@example.com', password: 'password123' },
@@ -52,10 +63,14 @@ const LoginPage = () => {
     setEmail(testUsers[userType].email);
     setPassword(testUsers[userType].password);
     
-    // Auto-submit after 500ms
+    // Auto-submit after a short delay
     setTimeout(() => {
-      handleSubmit({ preventDefault: () => {} }); // Call handleSubmit directly
-    }, 500);
+      const form = document.querySelector('form');
+      if (form) {
+        const submitEvent = new Event('submit', { cancelable: true });
+        form.dispatchEvent(submitEvent);
+      }
+    }, 100);
   };
 
   return (
@@ -79,21 +94,24 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('user')}
-                className="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition"
+                className="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
               >
                 As User
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickLogin('seller')}
-                className="px-3 py-2 bg-green-50 text-green-600 text-sm rounded-lg hover:bg-green-100 transition"
+                className="px-3 py-2 bg-green-50 text-green-600 text-sm rounded-lg hover:bg-green-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
               >
                 As Seller
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin')}
-                className="px-3 py-2 bg-red-50 text-red-600 text-sm rounded-lg hover:bg-red-100 transition"
+                className="px-3 py-2 bg-red-50 text-red-600 text-sm rounded-lg hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
               >
                 As Admin
               </button>
@@ -125,9 +143,10 @@ const LoginPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="you@example.com"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -145,14 +164,16 @@ const LoginPage = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Enter your password"
                   required
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center disabled:opacity-50"
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -169,7 +190,8 @@ const LoginPage = () => {
                 <input
                   type="checkbox"
                   id="remember"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                  disabled={loading}
                 />
                 <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
                   Remember me
@@ -177,7 +199,7 @@ const LoginPage = () => {
               </div>
               <Link
                 to="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
               >
                 Forgot password?
               </Link>

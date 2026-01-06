@@ -16,34 +16,35 @@ import {
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
+  // Updated footer links based on your existing pages
   const footerLinks = {
     'Quick Links': [
       { name: 'Home', path: '/' },
       { name: 'Products', path: '/products' },
       { name: 'Categories', path: '/categories' },
-      { name: 'Sellers', path: '/sellers' },
       { name: 'About Us', path: '/about' },
       { name: 'Contact', path: '/contact' },
+      { name: 'Help', path: '/help' },
     ],
     'Support': [
       { name: 'Help Center', path: '/help' },
       { name: 'FAQ', path: '/faq' },
-      { name: 'Shipping Info', path: '/shipping' },
+      { name: 'Shipping', path: '/shipping-info' }, // Will need to create or use help
       { name: 'Returns', path: '/returns' },
       { name: 'Privacy Policy', path: '/privacy' },
       { name: 'Terms of Service', path: '/terms' },
     ],
     'Account': [
-      { name: 'My Account', path: '/profile' },
-      { name: 'Order History', path: '/orders' },
+      { name: 'My Profile', path: '/profile' },
+      { name: 'My Orders', path: '/orders' },
       { name: 'Wishlist', path: '/wishlist' },
-      { name: 'Newsletter', path: '/newsletter' },
-      { name: 'Seller Portal', path: '/seller' },
-      { name: 'Affiliate Program', path: '/affiliate' },
+      { name: 'Settings', path: '/settings' },
+      { name: 'Seller Dashboard', path: '/seller' },
+      { name: 'Admin Panel', path: '/admin' },
     ],
     'Features': [
       { name: 'Secure Payments', path: '/security', icon: <Shield size={16} /> },
-      { name: 'Free Shipping', path: '/shipping', icon: <Truck size={16} /> },
+      { name: 'Fast Delivery', path: '/shipping', icon: <Truck size={16} /> },
       { name: 'Easy Returns', path: '/returns', icon: <ShoppingBag size={16} /> },
       { name: 'Price Match', path: '/price-match', icon: <CreditCard size={16} /> },
     ]
@@ -63,7 +64,11 @@ const Footer = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {footerLinks['Features'].map((feature) => (
-              <div key={feature.name} className="flex items-center space-x-3">
+              <Link 
+                key={feature.name} 
+                to={feature.path}
+                className="flex items-center space-x-3 hover:scale-105 transition-transform"
+              >
                 <div className="text-white/80">
                   {feature.icon}
                 </div>
@@ -71,7 +76,7 @@ const Footer = () => {
                   <h4 className="font-medium">{feature.name}</h4>
                   <p className="text-sm text-white/70">Learn more</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -80,17 +85,17 @@ const Footer = () => {
       {/* Main Footer Content */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          {/* Brand Column - Takes 2 columns on desktop */}
+          {/* Brand Column */}
           <div className="lg:col-span-2">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+            <Link to="/" className="flex items-center space-x-3 mb-6 group">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                 <span className="text-gray-900 font-bold text-2xl">MP</span>
               </div>
               <div>
                 <h2 className="text-2xl font-bold">MarketPlace</h2>
                 <p className="text-gray-400">Your Trusted Online Marketplace</p>
               </div>
-            </div>
+            </Link>
             
             <p className="text-gray-400 mb-6 max-w-md">
               Discover amazing products from verified sellers. Fast delivery, 
@@ -131,12 +136,12 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Links Columns - Each takes 1 column on desktop */}
+          {/* Links Columns */}
           {Object.entries(footerLinks)
             .filter(([category]) => category !== 'Features')
             .map(([category, links]) => (
               <div key={category}>
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <h3 className="text-lg font-semibold mb-4">
                   <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
                     {category}
                   </span>
