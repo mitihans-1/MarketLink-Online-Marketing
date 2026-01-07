@@ -36,6 +36,12 @@ import TermsPage from '../pages/TermsPage';
 import SellerRegisterPage from '../pages/SellerRegisterPage';
 import CheckoutPage from '../pages/CheckoutPage';
 
+// Import Seller pages (you need to create these)
+import SellerProductsPage from '../pages/seller/SellerProductsPage';
+import SellerOrdersPage from '../pages/seller/SellerOrdersPage';
+import SellerAnalyticsPage from '../pages/seller/SellerAnalyticsPage';
+import SellerProfilePage from '../pages/seller/SellerProfilePage';
+
 // Create simple placeholder pages for any missing routes
 const ShippingInfoPage = () => (
   <div className="container mx-auto px-4 py-8">
@@ -167,22 +173,22 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
-      // In your AppRoutes.jsx, update the admin section:
-<Route path="/admin/*" element={
-  <ProtectedRoute requireAdmin>
-    <AdminLayout>
-      <Routes>
-        <Route path="/" element={<AdminPage />} />
-        <Route path="/users" element={<AdminPage />} />
-        <Route path="/products" element={<AdminPage />} />
-        <Route path="/transactions" element={<AdminPage />} />
-        <Route path="/reports" element={<AdminPage />} />
-        <Route path="/settings" element={<AdminPage />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    </AdminLayout>
-  </ProtectedRoute>
-} />
+      {/* ADMIN - Uses different layout */}
+      <Route path="/admin/*" element={
+        <ProtectedRoute requireAdmin>
+          <AdminLayout>
+            <Routes>
+              <Route path="/" element={<AdminPage />} />
+              <Route path="/users" element={<AdminPage />} />
+              <Route path="/products" element={<AdminPage />} />
+              <Route path="/transactions" element={<AdminPage />} />
+              <Route path="/reports" element={<AdminPage />} />
+              <Route path="/settings" element={<AdminPage />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
+          </AdminLayout>
+        </ProtectedRoute>
+      } />
 
       {/* SELLER - Uses different layout */}
       <Route path="/seller/*" element={
@@ -190,6 +196,11 @@ const AppRoutes = () => {
           <SellerLayout>
             <Routes>
               <Route path="/" element={<SellerDashboardPage />} />
+              <Route path="/dashboard" element={<SellerDashboardPage />} />
+              <Route path="/products" element={<SellerProductsPage />} />
+              <Route path="/orders" element={<SellerOrdersPage />} />
+              <Route path="/analytics" element={<SellerAnalyticsPage />} />
+              <Route path="/profile" element={<SellerProfilePage />} />
               <Route path="*" element={<Navigate to="/seller" replace />} />
             </Routes>
           </SellerLayout>
