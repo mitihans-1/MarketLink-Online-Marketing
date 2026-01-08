@@ -56,7 +56,7 @@ const CartPage = () => {
   };
 
   const handleRemoveItem = async (id) => {
-    if (window.confirm('Are you sure you want to remove this item from your cart?')) {
+    if (globalThis.confirm('Are you sure you want to remove this item from your cart?')) {
       setLocalLoading(true);
       try {
         await removeItem(id);
@@ -119,7 +119,7 @@ const CartPage = () => {
   };
 
   const handleClearCart = async () => {
-    if (window.confirm('Are you sure you want to clear your cart? This action cannot be undone.')) {
+    if (globalThis.confirm('Are you sure you want to clear your cart? This action cannot be undone.')) {
       setLocalLoading(true);
       try {
         await clearCart();
@@ -160,7 +160,7 @@ const CartPage = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Cart</h2>
           <p className="text-gray-600 mb-4">{error.message || 'Failed to load cart'}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => globalThis.location.reload()}
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
