@@ -7,9 +7,10 @@ import Footer from '../common/Footer';
 const MainLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+       
       <Navbar />
       <main className="flex-grow">
-        <Outlet /> {/* This is CRITICAL - renders page content */}
+        <Outlet /> {/* This renders the page content */}
       </main>
       <Footer />
     </div>

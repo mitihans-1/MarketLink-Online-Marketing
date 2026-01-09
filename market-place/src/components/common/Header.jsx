@@ -58,12 +58,12 @@ const Header = () => {
             
             <div className="w-px h-6 bg-white/30"></div>
             
-            <button 
-              onClick={() => navigate('/seller/register')}
-              className="text-sm font-medium px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30"
-            >
-              Become a Seller
-            </button>
+          <button 
+            onClick={() => navigate('/seller/register')}
+            className="text-sm font-medium px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30"
+          >
+            Become a Seller
+          </button>
           </div>
         </div>
       </div>

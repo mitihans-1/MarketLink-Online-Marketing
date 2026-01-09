@@ -109,7 +109,10 @@ const AppRoutes = () => {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        
+        {/* SELLER REGISTER MUST COME BEFORE SELLER WILDCARD */}
         <Route path="/seller/register" element={<SellerRegisterPage />} />
+        
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/help" element={<HelpPage />} />
@@ -190,7 +193,8 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
-      {/* SELLER - Uses different layout */}
+      {/* SELLER DASHBOARD - Uses different layout 
+          NOTE: This comes AFTER /seller/register */}
       <Route path="/seller/*" element={
         <ProtectedRoute requireSeller>
           <SellerLayout>
