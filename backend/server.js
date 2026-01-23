@@ -21,6 +21,7 @@ app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 
 // Base route
 app.get('/', (req, res) => {

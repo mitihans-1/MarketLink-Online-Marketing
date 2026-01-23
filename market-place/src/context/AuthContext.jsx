@@ -7,6 +7,8 @@ export const AuthContext = createContext({
   login: async () => ({ success: false, message: 'Not implemented' }),
   logout: () => ({ success: false }),
   register: async () => ({ success: false, message: 'Not implemented' }),
+  googleLogin: async () => ({ success: false, message: 'Not implemented' }),
+  facebookLogin: async () => ({ success: false, message: 'Not implemented' }),
   updateProfile: async () => ({ success: false, message: 'Not implemented' }),
   loading: true,
   isAuthenticated: false

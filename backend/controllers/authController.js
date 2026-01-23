@@ -37,7 +37,7 @@ const registerUser = async (req, res) => {
         // Create user
         const [result] = await db.query(
             'INSERT INTO users (name, email, password, role, is_verified, verification_token) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, email, hashedPassword, role || 'user', true, verificationToken]
+            [name, email, hashedPassword, role || 'user', false, verificationToken]
         );
 
         const userId = result.insertId;
@@ -127,11 +127,33 @@ const googleAuth = async (req, res) => {
 
             const [result] = await db.query(
                 'INSERT INTO users (name, email, password, role, is_verified, avatar) VALUES (?, ?, ?, ?, ?, ?)',
-                [name, email, hashedPassword, role || 'buyer', true, avatar || '']
+                [name || email.split('@')[0], email, hashedPassword, role || 'buyer', true, avatar || '']
             );
 
             const [newUsers] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
             user = newUsers[0];
+
+            // Send welcome email for Google registration
+            try {
+                const message = `
+                    <h1>Welcome to MarketLink!</h1>
+                    <p>You have successfully registered using your Google account.</p>
+                    <p>We are excited to have you on board.</p>
+                    <br>
+                    <p>Best Regards,</p>
+                    <p>The MarketLink Team</p>
+                `;
+
+                await sendEmail({
+                    email: user.email,
+                    subject: 'Welcome to MarketLink',
+                    message: 'Welcome to MarketLink! Your account has been created via Google.',
+                    html: message
+                });
+                console.log(`Welcome email sent to Google user: ${user.email}`);
+            } catch (emailError) {
+                console.error('Failed to send welcome email (Google):', emailError);
+            }
         }
 
         // Return token and user info
@@ -143,6 +165,72 @@ const googleAuth = async (req, res) => {
             avatar: user.avatar,
             storeName: user.store_name,
             token: generateToken(user.id),
+            success: true
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Authenticate with Facebook
+// @route   POST /api/auth/facebook
+const facebookAuth = async (req, res) => {
+    const { email, name, facebookId, avatar, role } = req.body;
+
+    try {
+        // Check if user exists
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        let user = users[0];
+
+        if (!user) {
+            // Register new user
+            const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(generatedPassword, salt);
+
+            const [result] = await db.query(
+                'INSERT INTO users (name, email, password, role, is_verified, avatar) VALUES (?, ?, ?, ?, ?, ?)',
+                [name || email.split('@')[0], email, hashedPassword, role || 'buyer', true, avatar || '']
+            );
+
+            const [newUsers] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
+            user = newUsers[0];
+
+            // Send welcome email for Facebook registration
+            try {
+                const message = `
+                    <h1>Welcome to MarketLink!</h1>
+                    <p>You have successfully registered using your Facebook account.</p>
+                    <p>We are excited to have you on board.</p>
+                    <br>
+                    <p>Best Regards,</p>
+                    <p>The MarketLink Team</p>
+                `;
+
+                await sendEmail({
+                    email: user.email,
+                    subject: 'Welcome to MarketLink',
+                    message: 'Welcome to MarketLink! Your account has been created via Facebook.',
+                    html: message
+                });
+                console.log(`Welcome email sent to Facebook user: ${user.email}`);
+            } catch (emailError) {
+                console.error('Failed to send welcome email (Facebook):', emailError);
+            }
+        }
+
+        // Return token and user info
+        res.json({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+            storeName: user.store_name,
+            token: generateToken(user.id),
+            success: true
         });
 
     } catch (error) {
@@ -163,11 +251,9 @@ const loginUser = async (req, res) => {
 
         if (user && (await bcrypt.compare(password, user.password))) {
             // Email verification check bypassed as requested (default verified)
-            /* 
             if (!user.is_verified) {
                 return res.status(401).json({ message: 'Please verify your email before logging in' });
             }
-            */
             res.json({
                 id: user.id,
                 name: user.name,
@@ -176,6 +262,7 @@ const loginUser = async (req, res) => {
                 avatar: user.avatar,
                 storeName: user.store_name,
                 token: generateToken(user.id),
+                success: true
             });
         } else {
             res.status(401).json({ message: 'Invalid credentials' });
@@ -190,5 +277,6 @@ module.exports = {
     registerUser,
     loginUser,
     verifyEmail,
-    googleAuth
+    googleAuth,
+    facebookAuth
 };

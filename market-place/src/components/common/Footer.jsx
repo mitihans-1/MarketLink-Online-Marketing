@@ -1,23 +1,24 @@
 // src/components/common/Footer.jsx
 import React, { useState } from 'react';
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Linkedin, 
-  Mail, 
-  Phone, 
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
+  Mail,
+  Phone,
   MapPin,
   ShoppingBag,
   Shield,
   Truck,
-  CreditCard 
+  CreditCard
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const footerLinks = {
     'Quick Links': [
@@ -59,13 +60,28 @@ const Footer = () => {
     { icon: <Linkedin size={20} />, href: 'https://linkedin.com', label: 'LinkedIn' },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email) {
-      console.log('Subscribed with email:', email);
-      setSubscribed(true);
-      setEmail('');
-      setTimeout(() => setSubscribed(false), 3000);
+    if (!email) return;
+
+    setLoading(true);
+    try {
+      const { default: axiosInstance } = await import('../../api/axiosConfig');
+      const response = await axiosInstance.post('/newsletter/subscribe', { email });
+
+      if (response.data.success) {
+        setSubscribed(true);
+        setEmail('');
+        // Reset subscribed message after 5 seconds
+        setTimeout(() => setSubscribed(false), 5000);
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      // You might want to import toast here if you want to show error messages
+      const errorMessage = error.response?.data?.message || 'Failed to subscribe. Please try again.';
+      alert(errorMessage); // Simple fallback or use toast if available
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,8 +92,8 @@ const Footer = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {footerLinks['Features'].map((feature) => (
-              <Link 
-                key={feature.name} 
+              <Link
+                key={feature.name}
                 to={feature.path}
                 className="flex items-center space-x-3 hover:scale-105 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-lg p-2"
               >
@@ -99,8 +115,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand Column */}
           <div className="lg:col-span-2">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="flex items-center space-x-3 mb-6 group focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-lg p-2"
             >
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -111,13 +127,13 @@ const Footer = () => {
                 <p className="text-gray-400">Your Trusted Online Marketplace</p>
               </div>
             </Link>
-            
+
             <p className="text-gray-400 mb-6 max-w-md">
-              Discover amazing products from verified sellers. Fast delivery, 
-              secure payments, and excellent customer support. Join millions 
+              Discover amazing products from verified sellers. Fast delivery,
+              secure payments, and excellent customer support. Join millions
               of satisfied customers worldwide.
             </p>
-            
+
             {/* Social Links */}
             <div className="flex space-x-4 mb-8">
               {socialLinks.map((social) => (
@@ -185,11 +201,11 @@ const Footer = () => {
               <h3 className="text-xl font-semibold mb-2">Stay Updated</h3>
               <p className="text-gray-400">Subscribe to our newsletter for the latest deals and updates</p>
             </div>
-            
+
             {subscribed ? (
-              <div className="bg-green-900/30 border border-green-700 text-green-300 p-4 rounded-lg text-center">
-                <p className="font-medium">Thank you for subscribing!</p>
-                <p className="text-sm mt-1">You'll receive our next newsletter soon.</p>
+              <div className="bg-green-900/30 border border-green-700 text-green-300 p-4 rounded-lg text-center animate-fade-in">
+                <p className="font-medium text-lg">Thank you for subscribing!</p>
+                <p className="text-sm mt-1 opacity-90">You've successfully joined our newsletter.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
@@ -198,19 +214,25 @@ const Footer = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Your email address"
-                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-gray-500"
+                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-gray-500 transition-colors"
                   aria-label="Email for newsletter subscription"
-                  tabIndex={-1} 
+                  required
+                  disabled={loading}
                 />
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  disabled={loading}
+                  className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center justify-center min-w-[120px] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Subscribe
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    'Subscribe'
+                  )}
                 </button>
               </form>
             )}
-            
+
             <p className="text-gray-500 text-sm text-center mt-4">
               By subscribing, you agree to our Privacy Policy and consent to receive updates.
             </p>
@@ -228,40 +250,40 @@ const Footer = () => {
                 Designed with ❤️ for the community
               </p>
             </div>
-            
+
             <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-              <Link 
-                to="/privacy" 
+              <Link
+                to="/privacy"
                 className="text-gray-400 hover:text-white text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 rounded px-1 py-0.5"
               >
                 Privacy Policy
               </Link>
-              <Link 
-                to="/terms" 
+              <Link
+                to="/terms"
                 className="text-gray-400 hover:text-white text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 rounded px-1 py-0.5"
               >
                 Terms of Service
               </Link>
-              <Link 
-                to="/cookies" 
+              <Link
+                to="/cookies"
                 className="text-gray-400 hover:text-white text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 rounded px-1 py-0.5"
               >
                 Cookie Policy
               </Link>
-              <Link 
-                to="/sitemap" 
+              <Link
+                to="/sitemap"
                 className="text-gray-400 hover:text-white text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 rounded px-1 py-0.5"
               >
                 Sitemap
               </Link>
-              <Link 
-                to="/accessibility" 
+              <Link
+                to="/accessibility"
                 className="text-gray-400 hover:text-white text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 rounded px-1 py-0.5"
               >
                 Accessibility
               </Link>
             </div>
-            
+
             <div className="mt-4 md:mt-0">
               <div className="flex items-center space-x-2">
                 <span className="text-gray-500 text-sm">Secure payment by:</span>

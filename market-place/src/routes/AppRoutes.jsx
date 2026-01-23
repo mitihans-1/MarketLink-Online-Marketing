@@ -37,6 +37,7 @@ import SellerRegisterPage from '../pages/SellerRegisterPage';
 import CheckoutPage from '../pages/CheckoutPage';
 import VerifyEmailPage from '../pages/VerifyEmailPage';
 import GoogleLoginPage from '../pages/GoogleLoginPage';
+import FacebookLoginPage from '../pages/FacebookLoginPage';
 import AnalyticsPage from '../pages/AnalyticsPage';
 import ReportsPage from '../pages/ReportsPage';
 import SellerStorePage from '../pages/SellerStorePage';
@@ -55,6 +56,7 @@ import SecurityPage from '../pages/SecurityPage';
 import SitemapPage from '../pages/SitemapPage';
 import AccessibilityPage from '../pages/AccessibilityPage';
 import CookiesPage from '../pages/CookiesPage';
+import PaymentMethodsPage from '../pages/PaymentMethodsPage';
 
 const AppRoutes = () => {
   const { loading } = useAuth();
@@ -83,6 +85,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/auth/google" element={<GoogleLoginPage />} />
+        <Route path="/auth/facebook" element={<FacebookLoginPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         {/* SELLER REGISTER MUST COME BEFORE SELLER WILDCARD */}
@@ -100,6 +103,7 @@ const AppRoutes = () => {
         <Route path="/sitemap" element={<SitemapPage />} />
         <Route path="/accessibility" element={<AccessibilityPage />} />
         <Route path="/cookies" element={<CookiesPage />} />
+        <Route path="/payment-methods" element={<PaymentMethodsPage />} />
 
         {/* Protected Routes - Still inside MainLayout */}
         <Route path="/cart" element={

@@ -21,13 +21,46 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { register, googleLogin } = useAuth();
+  const { register, googleLogin, facebookLogin } = useAuth();
 
-  const handleSocialLogin = (provider) => {
-    if (provider === 'google') {
-      navigate(`/auth/google?role=${formData.accountType}`);
-    } else {
-      toast.error(`${provider} login is not implemented yet.`);
+  const handleSocialLogin = async (provider) => {
+    const role = formData.accountType;
+    const loadingToast = toast.loading(`Connecting to ${provider}...`);
+
+    try {
+      let result;
+      if (provider === 'google') {
+        const googleData = {
+          email: `${formData.email || 'user'}@google.com`,
+          name: `${formData.firstName} ${formData.lastName}`.trim() || 'Google User',
+          googleId: 'google_' + Date.now(),
+          role: role
+        };
+        result = await googleLogin(googleData);
+      } else if (provider === 'facebook') {
+        const fbData = {
+          email: `${formData.email || 'user'}@facebook.com`,
+          name: `${formData.firstName} ${formData.lastName}`.trim() || 'Facebook User',
+          facebookId: 'fb_' + Date.now(),
+          role: role
+        };
+        result = await facebookLogin(fbData);
+      } else {
+        toast.dismiss(loadingToast);
+        toast.error(`${provider} login is not implemented yet.`);
+        return;
+      }
+
+      toast.dismiss(loadingToast);
+      if (result.success) {
+        toast.success(`Welcome, ${result.name}!`);
+        navigate('/dashboard');
+      } else {
+        toast.error(result.message || 'Authentication failed');
+      }
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error('An unexpected error occurred');
     }
   };
 
