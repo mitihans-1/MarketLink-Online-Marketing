@@ -106,22 +106,33 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = useCallback(async (profileData) => {
     try {
-      // Typically you'd have a userService.updateProfile(profileData) call here
-      const updatedUser = { ...user, ...profileData };
-      localStorage.setItem('marketplace_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      return {
-        success: true,
-        user: updatedUser,
-        message: 'Profile updated successfully'
-      };
-    } catch {
+      const result = await authService.updateProfile(profileData);
+      if (result.success && result.user) {
+        setUser(result.user);
+      }
+      return result;
+    } catch (error) {
       return {
         success: false,
-        message: 'Failed to update profile'
+        message: error.message || 'Failed to update profile'
       };
     }
-  }, [user]);
+  }, []);
+
+  const switchToSeller = useCallback(async () => {
+    try {
+      const result = await authService.switchToSeller();
+      if (result.success && result.user) {
+        setUser(result.user);
+      }
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to switch to seller'
+      };
+    }
+  }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
@@ -132,9 +143,10 @@ export const AuthProvider = ({ children }) => {
     googleLogin,
     facebookLogin,
     updateProfile,
+    switchToSeller,
     loading,
     isAuthenticated: !!user
-  }), [user, loading, login, logout, register, googleLogin, facebookLogin, updateProfile]);
+  }), [user, loading, login, logout, register, googleLogin, facebookLogin, updateProfile, switchToSeller]);
 
   return (
     <AuthContext.Provider value={value}>

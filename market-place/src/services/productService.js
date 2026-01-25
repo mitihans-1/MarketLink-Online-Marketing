@@ -1,11 +1,11 @@
 import axiosInstance from '../api/axiosConfig';
 
 const productService = {
-    getProducts: async () => {
+    getProducts: async (params = {}) => {
         try {
-            const response = await axiosInstance.get('/products');
+            const response = await axiosInstance.get('/products', { params });
             if (response.data && response.data.length > 0) {
-                return response.data;
+                return response.data.map(product => normalizeProduct(product));
             }
             throw new Error('No products found');
         } catch (error) {
@@ -25,7 +25,7 @@ const productService = {
     getProductById: async (id) => {
         try {
             const response = await axiosInstance.get(`/products/${id}`);
-            return response.data;
+            return normalizeProduct(response.data);
         } catch (error) {
             console.warn(`Using mock product for ${id} due to API error:`, error.message);
             return {
@@ -60,7 +60,10 @@ const productService = {
         try {
             const response = await axiosInstance.get('/products/categories');
             if (response.data && response.data.length > 0) {
-                return response.data;
+                return response.data.map(category => ({
+                    ...category,
+                    image: category.image_url ? normalizeImageUrl(category.image_url) : null
+                }));
             }
             throw new Error('No categories found');
         } catch (error) {
@@ -116,7 +119,71 @@ const productService = {
             console.error('Error uploading image:', error);
             throw error;
         }
+    },
+
+    searchProducts: async (params) => {
+        try {
+            const response = await axiosInstance.get('/products', { params });
+            return response.data.map(product => normalizeProduct(product));
+        } catch (error) {
+            console.error('Error searching products:', error);
+            throw error;
+        }
+    },
+
+    getSellerProducts: async () => {
+        try {
+            const response = await axiosInstance.get('/products/seller');
+            return response.data.map(product => normalizeProduct(product));
+        } catch (error) {
+            console.error('Error fetching seller products:', error);
+            throw error.response?.data || { message: 'Failed to fetch your products' };
+        }
+    },
+
+    updateProduct: async (id, productData) => {
+        try {
+            const response = await axiosInstance.put(`/products/${id}`, productData);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating product:', error);
+            throw error.response?.data || { message: 'Failed to update product' };
+        }
+    },
+
+    deleteProduct: async (id) => {
+        try {
+            const response = await axiosInstance.delete(`/products/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            throw error.response?.data || { message: 'Failed to delete product' };
+        }
     }
+};
+
+const normalizeImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    // Handle cases where path might be stored with or without leading slash
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    // If it starts with /uploads, it's a backend file
+    if (cleanPath.startsWith('/uploads')) {
+        return `http://localhost:5000${cleanPath}`;
+    }
+    return url;
+};
+
+const normalizeProduct = (product) => {
+    const mainImage = normalizeImageUrl(product.image_url || product.image);
+    return {
+        ...product,
+        image: mainImage,
+        images: Array.isArray(product.image_url)
+            ? product.image_url.map(url => normalizeImageUrl(url))
+            : [mainImage],
+        category: product.category_name || product.category
+    };
 };
 
 export default productService;

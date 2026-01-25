@@ -1,0 +1,50 @@
+[
+  {
+    "id": 4,
+    "name": "Premium Wireless Headphones",
+    "description": "Noise-cancelling over-ear headphones with 30hr battery life",
+    "price": "299.99",
+    "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    "category_id": 1,
+    "stock": 45,
+    "seller_id": 4,
+    "rating": "0.0",
+    "created_at": "2026-01-25T00:25:53.000Z"
+  },
+  {
+    "id": 5,
+    "name": "Smart Fitness Watch",
+    "description": "Track your health with heart rate, sleep, and activity monitoring",
+    "price": "199.99",
+    "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    "category_id": 8,
+    "stock": 28,
+    "seller_id": 4,
+    "rating": "0.0",
+    "created_at": "2026-01-25T00:25:53.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Professional Camera Kit",
+    "description": "DSLR camera with 24.1MP sensor and 18-55mm lens",
+    "price": "899.99",
+    "image_url": "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    "category_id": 9,
+    "stock": 12,
+    "seller_id": 4,
+    "rating": "0.0",
+    "created_at": "2026-01-25T00:25:53.000Z"
+  },
+  {
+    "id": 7,
+    "name": "Ergonomic Office Chair",
+    "description": "Adjustable lumbar support with breathable mesh back",
+    "price": "349.99",
+    "image_url": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    "category_id": 10,
+    "stock": 62,
+    "seller_id": 4,
+    "rating": "0.0",
+    "created_at": "2026-01-25T00:25:53.000Z"
+  }
+]

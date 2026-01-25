@@ -1,22 +1,24 @@
 ﻿import React, { useState, useEffect } from "react";
 import productService from "../../services/productService";
 import AddProductModal from "./AddProductModal";
-import { Package, Plus, Search, Filter } from "lucide-react";
+import { Package, Plus, Search, Trash2, Edit } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const SellerProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await productService.getProducts();
-      // In a real app, you'd filter products by seller_id on the backend
-      // For now, we fetch all and show how it would look
+      const data = await productService.getSellerProducts();
       setProducts(data);
     } catch (err) {
       console.error("Failed to fetch products:", err);
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -26,95 +28,121 @@ const SellerProducts = () => {
     fetchProducts();
   }, []);
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+
+    try {
+      await productService.deleteProduct(id);
+      toast.success("Product deleted successfully");
+      fetchProducts();
+    } catch (err) {
+      toast.error(err.message || "Failed to delete product");
+    }
+  };
+
+  const handleEdit = (product) => {
+    setProductToEdit(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setProductToEdit(null);
+  };
+
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-6">
+    <div className="min-h-screen bg-transparent p-4 md:p-6 lg:p-8 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">My Product Catalog</h1>
-          <p className="text-gray-600">List, edit and manage your store inventory</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Store Catalog</h1>
+          <p className="text-gray-500 font-medium">Manage your active listings and inventory</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
         >
-          <Plus size={20} />
-          <span>Add New Product</span>
+          <Plus size={20} strokeWidth={3} />
+          <span>New Product</span>
         </button>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row gap-4 bg-gray-50/20">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Search products..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Filter by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
           />
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
-            <Filter size={18} />
-            <span>Filter</span>
-          </button>
         </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
         </div>
       ) : products.length > 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">Image</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Product Name</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Category</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Price</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">Stock</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-center">Actions</th>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Image</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Product Name</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Category</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Price</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Stock</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 flex justify-center">
-                      <img
-                        src={product.image_url || 'https://via.placeholder.com/40'}
-                        alt={product.name}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                    </td>
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-800">{product.name}</div>
-                      <div className="text-xs text-gray-500 truncate max-w-xs">{product.description}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{product.category_name || 'N/A'}</td>
-                    <td className="px-6 py-4 font-semibold text-gray-800">${parseFloat(product.price).toFixed(2)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.stock > 10 ? 'bg-green-100 text-green-700' :
-                            product.stock > 0 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                          }`}>
-                          {product.stock}
-                        </span>
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden mx-auto border border-gray-50">
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => e.target.src = 'https://via.placeholder.com/50'}
+                        />
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-center gap-2">
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
+                      <div className="font-black text-gray-900 text-center">{product.name}</div>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-bold text-gray-400 text-center uppercase tracking-tighter">{product.category_name || 'General'}</td>
+                    <td className="px-6 py-4 font-black text-gray-900 text-center">${Number(product.price).toFixed(2)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${product.stock > 10 ? 'bg-green-50 text-green-700 border-green-100' :
+                          product.stock > 0 ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                            'bg-red-50 text-red-700 border-red-100'
+                          } border`}>
+                          {product.stock} left
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          <Edit size={18} />
                         </button>
-                        <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -125,27 +153,28 @@ const SellerProducts = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-16 text-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Package size={40} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Products Yet</h2>
-          <p className="text-gray-600 max-w-sm mx-auto mb-8">
-            You haven't added any products to your store inventory yet. Start selling by adding your first product.
+          <h2 className="text-2xl font-black text-gray-900 mb-2">Shelf is Empty</h2>
+          <p className="text-gray-500 max-w-sm mx-auto mb-8 font-medium">
+            Ready to make some money? List your first product and start reaching thousands of buyers today.
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+            className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
           >
-            Add Your First Product
+            Start Selling Now
           </button>
         </div>
       )}
 
       <AddProductModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         onProductAdded={fetchProducts}
+        productToEdit={productToEdit}
       />
     </div>
   );

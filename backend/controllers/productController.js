@@ -3,8 +3,61 @@ const db = require('../config/db');
 // @desc    Get all products
 // @route   GET /api/products
 const getProducts = async (req, res) => {
+    const { q, category, minPrice, maxPrice, sortBy, limit } = req.query;
+
+    let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
+    const queryParams = [];
+
+    if (q) {
+        query += ' AND (p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ?)';
+        const searchTerm = `%${q}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    if (category) {
+        query += ' AND (c.name = ? OR c.slug = ?)';
+        queryParams.push(category, category);
+    }
+
+    if (minPrice) {
+        query += ' AND p.price >= ?';
+        queryParams.push(parseFloat(minPrice));
+    }
+
+    if (maxPrice) {
+        query += ' AND p.price <= ?';
+        queryParams.push(parseFloat(maxPrice));
+    }
+
+    // Sorting
+    if (sortBy) {
+        switch (sortBy) {
+            case 'price-low':
+                query += ' ORDER BY p.price ASC';
+                break;
+            case 'price-high':
+                query += ' ORDER BY p.price DESC';
+                break;
+            case 'name':
+                query += ' ORDER BY p.name ASC';
+                break;
+            case 'newest':
+                query += ' ORDER BY p.created_at DESC';
+                break;
+            default:
+                query += ' ORDER BY p.id DESC';
+        }
+    } else {
+        query += ' ORDER BY p.id DESC';
+    }
+
+    if (limit) {
+        query += ' LIMIT ?';
+        queryParams.push(parseInt(limit));
+    }
+
     try {
-        const [rows] = await db.query('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id');
+        const [rows] = await db.query(query, queryParams);
         res.json(rows);
     } catch (error) {
         console.error(error);
@@ -150,6 +203,85 @@ const deleteCategory = async (req, res) => {
     }
 };
 
+// @desc    Get products by seller
+// @route   GET /api/products/seller
+// @access  Private/Seller
+const getSellerProducts = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.seller_id = ? ORDER BY p.created_at DESC',
+            [req.user.id]
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update product
+// @route   PUT /api/products/:id
+// @access  Private/Seller
+const updateProduct = async (req, res) => {
+    const { name, description, price, image_url, category_id, stock } = req.body;
+    const { id } = req.params;
+
+    try {
+        const [existing] = await db.query('SELECT * FROM products WHERE id = ?', [id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Ownership check
+        if (existing[0].seller_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized to update this product' });
+        }
+
+        await db.query(
+            'UPDATE products SET name = ?, description = ?, price = ?, image_url = ?, category_id = ?, stock = ? WHERE id = ?',
+            [
+                name || existing[0].name,
+                description || existing[0].description,
+                price || existing[0].price,
+                image_url || existing[0].image_url,
+                category_id || existing[0].category_id,
+                stock !== undefined ? stock : existing[0].stock,
+                id
+            ]
+        );
+
+        res.json({ message: 'Product updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Delete product
+// @route   DELETE /api/products/:id
+// @access  Private/Seller
+const deleteProduct = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const [existing] = await db.query('SELECT * FROM products WHERE id = ?', [id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Ownership check
+        if (existing[0].seller_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized to delete this product' });
+        }
+
+        await db.query('DELETE FROM products WHERE id = ?', [id]);
+        res.json({ message: 'Product deleted' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     getProducts,
     getProductById,
@@ -157,5 +289,8 @@ module.exports = {
     getCategories,
     createCategory,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    getSellerProducts,
+    updateProduct,
+    deleteProduct
 };

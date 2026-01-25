@@ -22,9 +22,24 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user.role !== requiredRole && user.role !== 'admin') {
-    // User doesn't have required role and is not an admin
-    return <Navigate to="/unauthorized" replace />;
+  if (requiredRole) {
+    // Normalize user role (default to buyer if missing or empty)
+    let userRole = (user.role || 'buyer').toLowerCase();
+
+    // Normalize synonym for buyer
+    if (userRole === 'user') userRole = 'buyer';
+
+    const targetRole = requiredRole.toLowerCase();
+
+    const hasRole =
+      userRole === 'admin' ||
+      userRole === 'both' ||
+      userRole === targetRole;
+
+    if (!hasRole) {
+      console.warn(`Access denied. User role: ${userRole}, Required: ${targetRole}`);
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return children;

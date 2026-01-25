@@ -4,6 +4,7 @@ import ProductGrid from '../components/products/ProductGrid';
 import ProductFilters from '../components/products/ProductFilters';
 import CategoryGrid from '../components/home/CategoryGrid';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import productService from '../services/productService';
 
 const CategoryPage = () => {
   const { categoryId } = useParams();
@@ -46,90 +47,90 @@ const CategoryPage = () => {
 
   const fetchCategoryInfo = useCallback(async (id) => {
     const mockCategories = {
-      'electronics': { 
-        id: 'electronics', 
-        name: 'Electronics', 
+      'electronics': {
+        id: 'electronics',
+        name: 'Electronics',
         description: 'Latest gadgets, smartphones, laptops, and cutting-edge technology from top brands',
         image: CATEGORY_IMAGES.electronics,
         icon: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: true
       },
-      'fashion': { 
-        id: 'fashion', 
-        name: 'Fashion', 
+      'fashion': {
+        id: 'fashion',
+        name: 'Fashion',
         description: 'Trendy clothing, accessories, and premium style essentials for every season',
         image: CATEGORY_IMAGES.fashion,
         icon: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: true
       },
-      'home': { 
-        id: 'home', 
-        name: 'Home & Living', 
+      'home': {
+        id: 'home',
+        name: 'Home & Living',
         description: 'Premium home decor, furniture, kitchen appliances, and living space essentials',
         image: CATEGORY_IMAGES.home,
         icon: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: true
       },
-      'sports': { 
-        id: 'sports', 
-        name: 'Sports & Fitness', 
+      'sports': {
+        id: 'sports',
+        name: 'Sports & Fitness',
         description: 'Professional sports equipment, fitness gear, outdoor adventure, and training essentials',
         image: CATEGORY_IMAGES.sports,
         icon: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: false
       },
-      'books': { 
-        id: 'books', 
-        name: 'Books & Stationery', 
+      'books': {
+        id: 'books',
+        name: 'Books & Stationery',
         description: 'Bestselling books, educational materials, premium stationery, and learning resources',
         image: CATEGORY_IMAGES.books,
         icon: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: false
       },
-      'beauty': { 
-        id: 'beauty', 
-        name: 'Beauty & Wellness', 
+      'beauty': {
+        id: 'beauty',
+        name: 'Beauty & Wellness',
         description: 'Luxury skincare, premium cosmetics, wellness products, and personal care essentials',
         image: CATEGORY_IMAGES.beauty,
         icon: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: true
       },
-      'home-appliances': { 
-        id: 'home-appliances', 
-        name: 'Home Appliances', 
+      'home-appliances': {
+        id: 'home-appliances',
+        name: 'Home Appliances',
         description: 'Smart home appliances, kitchen gadgets, and modern living solutions',
         image: CATEGORY_IMAGES['home-appliances'],
         icon: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: true
       },
-      'furniture': { 
-        id: 'furniture', 
-        name: 'Furniture', 
+      'furniture': {
+        id: 'furniture',
+        name: 'Furniture',
         description: 'Modern furniture, home office setups, and premium interior solutions',
         image: CATEGORY_IMAGES.furniture,
         icon: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: false
       },
-      'jewelry': { 
-        id: 'jewelry', 
-        name: 'Jewelry', 
+      'jewelry': {
+        id: 'jewelry',
+        name: 'Jewelry',
         description: 'Fine jewelry, luxury watches, and premium accessories',
         image: CATEGORY_IMAGES.jewelry,
         icon: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: true
       },
-      'watches': { 
-        id: 'watches', 
-        name: 'Watches', 
+      'watches': {
+        id: 'watches',
+        name: 'Watches',
         description: 'Luxury watches, smartwatches, and premium timepieces',
         image: CATEGORY_IMAGES.watches,
         icon: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
         featured: false
       }
     };
-    return mockCategories[id] || { 
-      id, 
-      name: id.charAt(0).toUpperCase() + id.slice(1).replace('-', ' '), 
+    return mockCategories[id] || {
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1).replace('-', ' '),
       description: `Discover premium products in our exclusive ${id.replace('-', ' ')} collection`,
       image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
       icon: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
@@ -285,88 +286,88 @@ const CategoryPage = () => {
   const fetchSubCategories = useCallback(async (categoryId) => {
     const subCategoryImages = {
       electronics: [
-        { 
-          id: 'smartphones', 
-          name: 'Smartphones', 
+        {
+          id: 'smartphones',
+          name: 'Smartphones',
           image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 234
         },
-        { 
-          id: 'laptops', 
-          name: 'Laptops', 
+        {
+          id: 'laptops',
+          name: 'Laptops',
           image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 189
         },
-        { 
-          id: 'audio', 
-          name: 'Audio & Headphones', 
+        {
+          id: 'audio',
+          name: 'Audio & Headphones',
           image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 312
         },
-        { 
-          id: 'cameras', 
-          name: 'Cameras', 
+        {
+          id: 'cameras',
+          name: 'Cameras',
           image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 156
         },
-        { 
-          id: 'wearables', 
-          name: 'Wearable Tech', 
+        {
+          id: 'wearables',
+          name: 'Wearable Tech',
           image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 89
         },
-        { 
-          id: 'gaming', 
-          name: 'Gaming', 
+        {
+          id: 'gaming',
+          name: 'Gaming',
           image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 267
         },
       ],
       fashion: [
-        { 
-          id: 'men', 
-          name: "Men's Fashion", 
+        {
+          id: 'men',
+          name: "Men's Fashion",
           image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 456
         },
-        { 
-          id: 'women', 
-          name: "Women's Fashion", 
+        {
+          id: 'women',
+          name: "Women's Fashion",
           image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 589
         },
-        { 
-          id: 'shoes', 
-          name: 'Shoes', 
+        {
+          id: 'shoes',
+          name: 'Shoes',
           image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 312
         },
-        { 
-          id: 'accessories', 
-          name: 'Accessories', 
+        {
+          id: 'accessories',
+          name: 'Accessories',
           image: 'https://images.unsplash.com/photo-1590649887896-6c7e47b3c7c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1590649887896-6c7e47b3c7c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 234
         },
-        { 
-          id: 'jewelry', 
-          name: 'Jewelry', 
+        {
+          id: 'jewelry',
+          name: 'Jewelry',
           image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 178
         },
-        { 
-          id: 'bags', 
-          name: 'Bags & Luggage', 
+        {
+          id: 'bags',
+          name: 'Bags & Luggage',
           image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
           icon: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
           count: 145
@@ -391,7 +392,15 @@ const CategoryPage = () => {
         const categoryData = await fetchCategoryInfo(categoryId);
         setCategoryInfo(categoryData);
 
-        const productsData = await fetchProductsByCategory(categoryId, filters);
+        // Try to fetch from backend first
+        let productsData;
+        try {
+          productsData = await productService.getProducts({ category: categoryId, ...filters });
+        } catch (apiError) {
+          console.warn('API error in CategoryPage, falling back to mock:', apiError);
+          productsData = await fetchProductsByCategory(categoryId, filters);
+        }
+
         setProducts(productsData);
 
         const subCategories = await fetchSubCategories(categoryId);
@@ -444,14 +453,14 @@ const CategoryPage = () => {
               {categoryInfo?.description}
             </p>
             <div className="flex gap-4">
-              <a 
-                href="#products" 
+              <a
+                href="#products"
                 className="px-8 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
               >
                 Shop Now
               </a>
-              <a 
-                href="#categories" 
+              <a
+                href="#categories"
                 className="px-8 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-colors"
               >
                 Explore Categories
@@ -572,8 +581,8 @@ const CategoryPage = () => {
                             Browse our premium {categoryInfo?.name} collections
                           </p>
                         </div>
-                        <a 
-                          href={`/categories/${categoryId}`} 
+                        <a
+                          href={`/categories/${categoryId}`}
                           className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
                         >
                           View all
@@ -583,7 +592,7 @@ const CategoryPage = () => {
                         </a>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                       {categories.map((subCategory) => (
                         <a

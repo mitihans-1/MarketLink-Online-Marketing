@@ -12,7 +12,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { cartItems } = useCart();
-  
+
   // Calculate cart item count
   const cartCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
@@ -26,13 +26,24 @@ const Navbar = () => {
   }, []);
 
   const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Products', path: '/products' },
-    { name: 'Categories', path: '/categories' },
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Seller', path: '/seller' },
-    { name: 'Admin', path: '/admin' },
+    { name: 'Home', path: '/', roles: ['all'] },
+    { name: 'Products', path: '/products', roles: ['all'] },
+    { name: 'Categories', path: '/categories', roles: ['all'] },
+    { name: 'My Dashboard', path: '/dashboard', roles: ['buyer', 'both', 'admin'] },
+    { name: 'Seller Port', path: '/seller', roles: ['seller', 'both', 'admin'] },
+    { name: 'Admin', path: '/admin', roles: ['admin'] },
   ];
+
+  const filteredNavItems = navItems.filter(item => {
+    if (item.roles.includes('all')) return true;
+    if (!isAuthenticated || !user) return false;
+
+    // Normalize role (default to buyer)
+    let role = (user.role || 'buyer').toLowerCase();
+    if (role === 'user') role = 'buyer';
+
+    return item.roles.includes(role) || role === 'admin' || role === 'both';
+  });
 
   const handleSearch = (e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
@@ -65,9 +76,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`bg-white shadow-md border-b sticky top-0 z-50 transition-all duration-200 ${
-      isScrolled ? 'shadow-lg' : 'shadow-md'
-    }`}>
+    <nav className={`bg-white shadow-md border-b sticky top-0 z-50 transition-all duration-200 ${isScrolled ? 'shadow-lg' : 'shadow-md'
+      }`}>
       <div className="container mx-auto px-4">
         {/* Mobile Search Bar - Shows on top when activated */}
         {showMobileSearch && (
@@ -106,8 +116,8 @@ const Navbar = () => {
         {/* Main Navbar Content */}
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center"
           >
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg mr-2 flex items-center justify-center">
@@ -142,7 +152,7 @@ const Navbar = () => {
 
           {/* Desktop Navigation - Responsive spacing */}
           <div className="hidden lg:flex items-center space-x-2 xl:space-x-4">
-            {navItems.slice(0, 4).map((item) => (
+            {filteredNavItems.map((item) => (
               <button
                 key={item.name}
                 onClick={() => handleNavigation(item.path)}
@@ -156,7 +166,7 @@ const Navbar = () => {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Search Toggle Button (Mobile) */}
-            <button 
+            <button
               onClick={() => setShowMobileSearch(true)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100"
               aria-label="Search"
@@ -165,7 +175,7 @@ const Navbar = () => {
             </button>
 
             {/* Cart Button */}
-            <button 
+            <button
               onClick={() => handleNavigation('/cart')}
               className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label="Shopping Cart"
@@ -177,11 +187,11 @@ const Navbar = () => {
                 </span>
               )}
             </button>
-            
+
             {/* User Profile / Login */}
             {isAuthenticated ? (
               <div className="hidden md:flex items-center space-x-2">
-                <button 
+                <button
                   onClick={() => handleNavigation('/profile')}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
@@ -194,9 +204,9 @@ const Navbar = () => {
                     {user?.name?.split(' ')[0] || 'User'}
                   </span>
                 </button>
-                
+
                 {/* Logout Button */}
-                <button 
+                <button
                   onClick={handleLogout}
                   className="ml-2 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
                 >
@@ -204,7 +214,7 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={() => handleNavigation('/login')}
                 className="hidden md:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:opacity-90 font-medium transition-opacity"
               >
@@ -229,7 +239,7 @@ const Navbar = () => {
           <div className="lg:hidden bg-white border-t animate-slideDown">
             {/* Navigation Items */}
             <div className="py-2">
-              {navItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <button
                   key={item.name}
                   onClick={() => handleNavigation(item.path)}
@@ -257,7 +267,7 @@ const Navbar = () => {
 
             {/* Cart Info in Mobile Menu */}
             <div className="border-t pt-2">
-              <button 
+              <button
                 onClick={() => handleNavigation('/cart')}
                 className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-blue-50"
               >
@@ -277,31 +287,31 @@ const Navbar = () => {
             <div className="border-t pt-2">
               {isAuthenticated ? (
                 <>
-                  <button 
+                  <button
                     onClick={() => handleNavigation('/profile')}
                     className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-blue-50"
                   >
                     <User size={20} className="mr-3" />
                     <span>My Profile</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleNavigation('/orders')}
                     className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-blue-50"
                   >
                     <ShoppingCart size={20} className="mr-3" />
                     <span>My Orders</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleNavigation('/search')}
                     className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-blue-50"
                   >
                     <Search size={20} className="mr-3" />
                     <span>Search Products</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={handleLogout}
                     className="flex items-center w-full px-4 py-3 text-red-600 hover:bg-red-50 border-t mt-2"
                   >
@@ -310,22 +320,22 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <button 
+                  <button
                     onClick={() => handleNavigation('/login')}
                     className="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium rounded-lg mx-4 mb-2"
                   >
                     <User size={20} className="mr-2" />
                     <span>Sign In</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleNavigation('/register')}
                     className="flex items-center justify-center w-full px-4 py-3 border-2 border-blue-500 text-blue-600 font-medium rounded-lg mx-4 hover:bg-blue-50"
                   >
                     <span>Create Account</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleNavigation('/search')}
                     className="flex items-center justify-center w-full px-4 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-lg mx-4 mt-2 hover:bg-gray-50"
                   >
@@ -341,20 +351,20 @@ const Navbar = () => {
         {/* Secondary Desktop Nav for extra items (on larger screens) */}
         <div className="hidden lg:flex justify-center border-t pt-2 pb-1">
           <div className="flex items-center space-x-6">
-            <button 
+            <button
               onClick={() => handleNavigation('/search')}
               className="text-sm text-gray-600 hover:text-blue-600 flex items-center"
             >
               <Search size={16} className="mr-1" />
               Advanced Search
             </button>
-            <button 
+            <button
               onClick={() => handleNavigation('/deals')}
               className="text-sm text-gray-600 hover:text-blue-600"
             >
               Today's Deals
             </button>
-            <button 
+            <button
               onClick={() => handleNavigation('/help')}
               className="text-sm text-gray-600 hover:text-blue-600"
             >

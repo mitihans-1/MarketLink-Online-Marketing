@@ -1,11 +1,13 @@
-﻿// src/pages/LoginPage.jsx
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
+import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props';
+import axios from 'axios';
 
-const LoginPage = () => {
+const LoginPageContent = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,69 +21,137 @@ const LoginPage = () => {
   // Get the page they wanted to go to before login
   const from = location.state?.from?.pathname || '/dashboard';
 
-  const handleFacebookLogin = async () => {
-    setError('');
-    setLoading(true);
-    const loadingToast = toast.loading('Connecting to Facebook...');
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const verified = params.get('verified');
+    const message = params.get('message');
 
-    try {
-      const fbData = {
-        email: 'facebook_user@example.com',
-        name: 'Facebook User',
-        facebookId: 'fb_' + Date.now(),
-        avatar: 'https://graph.facebook.com/v12.0/me/picture',
-        role: 'buyer'
-      };
-
-      const result = await facebookLogin(fbData);
-      toast.dismiss(loadingToast);
-
-      if (result.success) {
-        toast.success(`Welcome back, ${result.name}!`);
-        navigate(from, { replace: true });
+    if (verified === 'true') {
+      toast.success('Email verified successfully! You can now log in.');
+      // Remove query params from URL
+      navigate('/login', { replace: true });
+    } else if (verified === 'false') {
+      if (message === 'invalid_token') {
+        toast.error('Invalid or expired verification link.');
+      } else if (message === 'server_error') {
+        toast.error('An error occurred during verification. Please try again later.');
       } else {
-        setError(result.message || 'Facebook login failed');
-        toast.error(result.message || 'Facebook login failed');
+        toast.error('Email verification failed.');
       }
-    } catch (err) {
+      navigate('/login', { replace: true });
+    }
+  }, [location, navigate]);
+
+  const handleMockLogin = (provider) => {
+    setLoading(true);
+    const loadingToast = toast.loading(`Connecting to ${provider.charAt(0).toUpperCase() + provider.slice(1)}...`);
+
+    // Simulate API call
+    setTimeout(() => {
       toast.dismiss(loadingToast);
-      setError('An error occurred during Facebook login');
-    } finally {
+      toast.success(`Welcome back! Successfully logged in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}.`);
+
+      // We can't really log them in without a user object, but we can simulate redirection
+      // In a real mock scenarios, you might want to set a dummy user in context
+      navigate(from, { replace: true });
       setLoading(false);
+    }, 1500);
+  };
+
+  // Helper function to determine where the user should go based on their role
+  const getRedirectPath = (userRole) => {
+    // If they were trying to reach a specific page (e.g. checkout), let them go there
+    if (from !== '/dashboard') return from;
+
+    switch (userRole) {
+      case 'admin':
+        return '/admin';
+      case 'seller':
+        return '/seller';
+      case 'both':
+        return '/seller'; // Business users usually want their dashboard first
+      case 'buyer':
+      default:
+        return '/dashboard';
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError('');
-    setLoading(true);
-    const loadingToast = toast.loading('Connecting to Google...');
+  const handleFacebookResponse = async (response) => {
+    if (response.accessToken) {
+      setLoading(true);
+      const loadingToast = toast.loading('Authenticating with Facebook...');
 
-    try {
-      const googleData = {
-        email: 'google_user@example.com',
-        name: 'Google User',
-        googleId: 'google_' + Date.now(),
-        avatar: 'https://lh3.googleusercontent.com/avatar',
-        role: 'buyer'
-      };
+      try {
+        const result = await facebookLogin({
+          email: response.email,
+          name: response.name,
+          facebookId: response.userID,
+          avatar: response.picture?.data?.url || '',
+          role: 'buyer' // Default role for social login
+        });
 
-      const result = await googleLogin(googleData);
-      toast.dismiss(loadingToast);
+        toast.dismiss(loadingToast);
 
-      if (result.success) {
-        toast.success(`Welcome back, ${result.name}!`);
-        navigate(from, { replace: true });
-      } else {
-        setError(result.message || 'Google login failed');
-        toast.error(result.message || 'Google login failed');
+        if (result.success) {
+          toast.success(`Welcome back, ${result.name}!`);
+          navigate(getRedirectPath(result.role), { replace: true });
+        } else {
+          setError(result.message || 'Facebook login failed');
+          toast.error(result.message || 'Facebook login failed');
+        }
+      } catch (err) {
+        toast.dismiss(loadingToast);
+        setError('An error occurred during Facebook login');
+        console.error('Facebook login error:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      toast.dismiss(loadingToast);
-      setError('An error occurred during Google login');
-    } finally {
-      setLoading(false);
     }
   };
+
+  const loginToGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      const loadingToast = toast.loading('Connecting to Google...');
+      try {
+        const userInfo = await axios.get(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          }
+        );
+
+        const googleData = {
+          email: userInfo.data.email,
+          name: userInfo.data.name,
+          googleId: userInfo.data.sub,
+          avatar: userInfo.data.picture,
+          role: 'buyer' // Default role
+        };
+
+        const result = await googleLogin(googleData);
+        toast.dismiss(loadingToast);
+
+        if (result.success) {
+          toast.success(`Welcome back, ${result.name}!`);
+          navigate(getRedirectPath(result.role), { replace: true });
+        } else {
+          setError(result.message || 'Google login failed');
+          toast.error(result.message || 'Google login failed');
+        }
+      } catch (err) {
+        toast.dismiss(loadingToast);
+        setError('An error occurred during Google login');
+        console.error('google login error:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error('Google Login Error:', error);
+      toast.error('Google login failed');
+    }
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,13 +168,8 @@ const LoginPage = () => {
       const result = await login(email, password);
 
       if (result && result.success === true) {
-        let targetPath = from;
-        if (from === '/dashboard') {
-          if (result.role === 'admin') targetPath = '/admin';
-          else if (result.role === 'seller') targetPath = '/seller';
-          else targetPath = '/dashboard';
-        }
-        navigate(targetPath, { replace: true });
+        toast.success(`Welcome back!`);
+        navigate(getRedirectPath(result.role), { replace: true });
       } else {
         const errorMessage = result?.message || result?.error || 'Login failed. Please try again.';
         setError(errorMessage);
@@ -120,11 +185,11 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-white flex">
       {/* Left Side - Form Section */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 py-12 relative bg-white">
+      <div className="w-full lg:w-1/2 flex flex-col px-8 sm:px-16 lg:px-24 py-12 relative bg-white">
 
         {/* Logo */}
-        <div className="absolute top-8 left-8 sm:left-16 lg:left-24">
-          <Link to="/" className="flex items-center gap-2 group">
+        <div className="flex-none mb-8 lg:mb-0">
+          <Link to="/" className="inline-flex items-center gap-2 group">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform duration-300">
               ML
             </div>
@@ -132,46 +197,10 @@ const LoginPage = () => {
           </Link>
         </div>
 
-        <div className="max-w-md w-full mx-auto animate-fade-in-up">
+        <div className="flex-1 flex flex-col justify-center max-w-md w-full mx-auto animate-fade-in-up">
           <div className="mb-10">
             <h1 className="text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">Welcome back</h1>
             <p className="text-gray-500 text-lg">Please enter your details to sign in.</p>
-          </div>
-
-          {/* Social Logins */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              <span>Google</span>
-            </button>
-            <button
-              onClick={handleFacebookLogin}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
-            >
-              <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span>Facebook</span>
-            </button>
-          </div>
-
-          <div className="relative mb-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">Or sign in with email</span>
-            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -264,6 +293,53 @@ const LoginPage = () => {
             </button>
           </form>
 
+          {/* Social Logins Moved to Bottom */}
+          <div className="mt-8">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500 font-medium">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => loginToGoogle()}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                <span>Google</span>
+              </button>
+
+              <FacebookLogin
+                appId={import.meta.env.VITE_FACEBOOK_APP_ID}
+                autoLoad={false}
+                fields="name,email,picture"
+                callback={handleFacebookResponse}
+                render={renderProps => (
+                  <button
+                    onClick={renderProps.onClick}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
+                  >
+                    <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                    <span>Facebook</span>
+                  </button>
+                )}
+              />
+            </div>
+          </div>
+
           <p className="mt-8 text-center text-gray-600">
             Don't have an account?{' '}
             <Link to="/register" className="font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all">
@@ -319,6 +395,14 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const LoginPage = () => {
+  return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <LoginPageContent />
+    </GoogleOAuthProvider>
   );
 };
 

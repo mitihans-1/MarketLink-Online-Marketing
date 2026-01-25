@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, SlidersHorizontal, X, DollarSign, Star } from 'lucide-react';
 import ProductGrid from '../components/products/ProductGrid';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import productService from '../services/productService';
+import { toast } from 'react-hot-toast';
 
 const SearchPage = () => {
   const location = useLocation();
@@ -23,82 +25,44 @@ const SearchPage = () => {
     sortBy: 'relevance'
   });
 
-  const categories = ['Electronics', 'Fashion', 'Accessories', 'Home', 'Furniture', 'Food'];
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await productService.getCategories();
+        setCategories(data.map(c => c.name));
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const query = params.get('q') || '';
     setSearchQuery(query);
 
-    if (query) {
-      fetchSearchResults(query);
-    } else {
-      setProducts([]);
-    }
-  }, [location.search]);
+    fetchSearchResults(query);
+  }, [location.search, filters]);
 
   const fetchSearchResults = async (query) => {
     setLoading(true);
     try {
-      // Mock products database for searching
-      const allMockProducts = [
-        { id: 1, name: 'Premium Wireless Headphones', price: 199.99, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800', category: 'Electronics', stock: 15, rating: 4.8 },
-        { id: 2, name: 'Smart Watch Series X', price: 299.50, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800', category: 'Electronics', stock: 8, rating: 4.5 },
-        { id: 3, name: 'Organic Cotton T-Shirt', price: 29.99, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800', category: 'Fashion', stock: 50, rating: 4.2 },
-        { id: 4, name: 'Leather Messenger Bag', price: 89.00, image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800', category: 'Accessories', stock: 12, rating: 4.7 },
-        { id: 5, name: 'Professional Camera Tripod', price: 55.40, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800', category: 'Electronics', stock: 20, rating: 4.4 },
-        { id: 6, name: 'Minimalist Wall Clock', price: 45.00, image: 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800', category: 'Home', stock: 5, rating: 4.9 },
-        { id: 7, name: 'Ergonomic Office Chair', price: 249.99, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800', category: 'Furniture', stock: 10, rating: 4.6 },
-        { id: 8, name: 'Gourmet Coffee Beans', price: 18.50, image: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800', category: 'Food', stock: 100, rating: 4.8 },
-        { id: 9, name: 'Bluetooth Speaker', price: 79.99, image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=800', category: 'Electronics', stock: 0, rating: 4.3 },
-        { id: 10, name: 'Yoga Mat Premium', price: 35.00, image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800', category: 'Accessories', stock: 25, rating: 4.6 },
-      ];
+      const params = {
+        q: query,
+        category: filters.category,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        sortBy: filters.sortBy
+      };
 
-      // Apply search filter
-      let results = allMockProducts.filter(p =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.category.toLowerCase().includes(query.toLowerCase())
-      );
-
-      // Apply advanced filters
-      if (filters.minPrice) {
-        results = results.filter(p => p.price >= parseFloat(filters.minPrice));
-      }
-      if (filters.maxPrice) {
-        results = results.filter(p => p.price <= parseFloat(filters.maxPrice));
-      }
-      if (filters.category) {
-        results = results.filter(p => p.category === filters.category);
-      }
-      if (filters.minRating > 0) {
-        results = results.filter(p => p.rating >= filters.minRating);
-      }
-      if (filters.inStock) {
-        results = results.filter(p => p.stock > 0);
-      }
-
-      // Apply sorting
-      switch (filters.sortBy) {
-        case 'price-low':
-          results.sort((a, b) => a.price - b.price);
-          break;
-        case 'price-high':
-          results.sort((a, b) => b.price - a.price);
-          break;
-        case 'rating':
-          results.sort((a, b) => b.rating - a.rating);
-          break;
-        case 'name':
-          results.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-        default:
-          break;
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setProducts(results);
+      const mappedProducts = await productService.searchProducts(params);
+      setProducts(mappedProducts);
     } catch (error) {
       console.error('Error fetching search results:', error);
+      toast.error('Failed to fetch search results');
     } finally {
       setLoading(false);
     }
@@ -300,7 +264,7 @@ const SearchPage = () => {
             </div>
 
             {products.length > 0 ? (
-              <ProductGrid products={products} />
+              <ProductGrid products={products} layout="grid" />
             ) : (
               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
                 <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

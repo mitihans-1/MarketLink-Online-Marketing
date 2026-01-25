@@ -3,7 +3,9 @@ import { X, Upload, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import productService from '../../services/productService';
 import AddCategoryModal from './AddCategoryModal';
 
-const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
+const AddProductModal = ({ isOpen, onClose, onProductAdded, productToEdit = null }) => {
+    const isEditMode = !!productToEdit;
+
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -21,8 +23,27 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
     useEffect(() => {
         if (isOpen) {
             fetchCategories();
+            if (productToEdit) {
+                setFormData({
+                    name: productToEdit.name || '',
+                    description: productToEdit.description || '',
+                    price: productToEdit.price || '',
+                    category_id: productToEdit.category_id || '',
+                    stock: productToEdit.stock || '',
+                    image_url: productToEdit.image_url || ''
+                });
+            } else {
+                setFormData({
+                    name: '',
+                    description: '',
+                    price: '',
+                    category_id: '',
+                    stock: '',
+                    image_url: ''
+                });
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, productToEdit]);
 
     const fetchCategories = async () => {
         try {
@@ -44,27 +65,26 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
         setError(null);
 
         try {
-            await productService.createProduct({
+            const payload = {
                 ...formData,
                 price: parseFloat(formData.price),
                 stock: parseInt(formData.stock) || 0
-            });
+            };
+
+            if (isEditMode) {
+                await productService.updateProduct(productToEdit.id, payload);
+            } else {
+                await productService.createProduct(payload);
+            }
+
             setSuccess(true);
             setTimeout(() => {
                 setSuccess(false);
                 onProductAdded();
                 onClose();
-                setFormData({
-                    name: '',
-                    description: '',
-                    price: '',
-                    category_id: '',
-                    stock: '',
-                    image_url: ''
-                });
-            }, 2000);
+            }, 1500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to add product');
+            setError(err.response?.data?.message || err.message || 'Action failed');
         } finally {
             setLoading(false);
         }
@@ -74,52 +94,51 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
 
     return (
         <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                    {/* Modal Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
-                        <h2 className="text-xl font-bold text-gray-800">Add New Product</h2>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-200">
+                    <div className="flex items-center justify-between px-8 py-6 border-b border-gray-50 bg-gray-50/50">
+                        <div>
+                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">{isEditMode ? 'Update Listing' : 'New Listing'}</h2>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Product Details</p>
+                        </div>
                         <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                            <X size={20} className="text-gray-500" />
+                            <X size={24} className="text-gray-900" />
                         </button>
                     </div>
 
-                    {/* Success Message */}
                     {success ? (
-                        <div className="p-12 text-center animate-in slide-in-from-bottom-4 duration-500">
-                            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <CheckCircle size={40} />
+                        <div className="p-16 text-center">
+                            <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <CheckCircle size={48} strokeWidth={3} />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800 mb-2">Product Added!</h3>
-                            <p className="text-gray-600">Your product has been successfully listed in the marketplace.</p>
+                            <h3 className="text-2xl font-black text-gray-900 mb-2">Inventory Updated</h3>
+                            <p className="text-gray-500 font-medium">Changes have been saved successfully.</p>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="p-6">
+                        <form onSubmit={handleSubmit} className="p-8">
                             {error && (
-                                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center text-red-700">
-                                    <AlertCircle size={20} className="mr-3 flex-shrink-0" />
+                                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center text-red-700 font-bold text-sm">
+                                    <AlertCircle size={20} className="mr-3" />
                                     <span>{error}</span>
                                 </div>
                             )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Product Name */}
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Item Name</label>
                                     <input
                                         type="text"
                                         name="name"
                                         required
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                                        placeholder="e.g., Premium Wireless Headphones"
+                                        className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all outline-none font-bold text-gray-900"
+                                        placeholder="e.g. Vintage Leather Jacket"
                                     />
                                 </div>
 
-                                {/* Price */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Price ($)</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -127,105 +146,84 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
                                         required
                                         value={formData.price}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all outline-none font-black text-gray-900"
                                         placeholder="0.00"
                                     />
                                 </div>
 
-                                {/* Stock */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Stock Level</label>
                                     <input
                                         type="number"
                                         name="stock"
                                         value={formData.stock}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                                        placeholder="0"
+                                        className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all outline-none font-black text-gray-900"
+                                        placeholder="Quantity"
                                     />
                                 </div>
 
-                                {/* Category */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2 flex justify-between">
-                                        Category *
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsCategoryModalOpen(true)}
-                                            className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1"
-                                        >
-                                            <Plus size={12} /> New
-                                        </button>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex justify-between">
+                                        Collection
+                                        <button type="button" onClick={() => setIsCategoryModalOpen(true)} className="text-blue-600 font-black">+ Create</button>
                                     </label>
                                     <select
                                         name="category_id"
                                         required
                                         value={formData.category_id}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-white font-medium"
+                                        className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all outline-none font-bold text-gray-900 appearance-none bg-no-repeat bg-[right_1.25rem_center]"
                                     >
-                                        <option value="">Select Category</option>
+                                        <option value="">Select Gallery</option>
                                         {categories.map(cat => (
                                             <option key={cat.id} value={cat.id}>{cat.name}</option>
                                         ))}
                                     </select>
                                 </div>
 
-                                {/* Image URL */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Image Source</label>
                                     <div className="relative">
                                         <input
                                             type="text"
                                             name="image_url"
                                             value={formData.image_url}
                                             onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                                            placeholder="https://images.unsplash.com/..."
+                                            className="w-full pl-12 pr-5 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all outline-none font-bold text-gray-900"
+                                            placeholder="URL to image"
                                         />
-                                        <Upload size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                                        <Upload size={20} className="absolute left-4 top-4 text-gray-400" />
                                     </div>
                                 </div>
 
-                                {/* Description */}
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description</label>
                                     <textarea
                                         name="description"
                                         rows="3"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none"
-                                        placeholder="Describe your product features and benefits..."
+                                        className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all outline-none resize-none font-medium text-gray-700"
+                                        placeholder="Story behind the product..."
                                     />
                                 </div>
                             </div>
 
-                            <div className="mt-8 flex gap-4">
+                            <div className="mt-10 flex gap-4">
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="flex-1 py-3 px-6 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                                    className="flex-1 py-4 px-6 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white transition-all flex items-center justify-center ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200'
-                                        }`}
+                                    className={`flex-1 py-4 px-6 rounded-2xl font-black text-white transition-all transform active:scale-95 flex items-center justify-center ${loading ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100'}`}
                                 >
-                                    {loading ? (
-                                        <>
-                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                            </svg>
-                                            Adding Product...
-                                        </>
-                                    ) : (
-                                        'Add Product'
-                                    )}
+                                    {loading ? 'Processing...' : isEditMode ? 'Update Product' : 'List Product'}
                                 </button>
                             </div>
                         </form>

@@ -4,6 +4,7 @@ import { useCart } from '../context/useCart';
 import CartItem from '../components/cart/CartItem';
 import CartSummary from '../components/cart/CartSummary';
 import { toast } from 'react-hot-toast';
+import orderService from '../services/orderService';
 import { CheckCircle, ArrowLeft, ShoppingBag, Truck, CreditCard, ShieldCheck } from 'lucide-react';
 
 const CheckoutPage = () => {
@@ -171,17 +172,31 @@ const CheckoutPage = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const orderData = {
+        orderItems: cartItems.map(item => ({
+          id: item.id,
+          quantity: item.quantity || 1,
+          price: item.price
+        })),
+        shippingAddress: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        phone: formData.phone,
+        paymentMethod: formData.paymentMethod,
+        totalAmount: total
+      };
 
-      console.log('Order submitted:', { formData, cartItems, total });
+      await orderService.createOrder(orderData);
+
       toast.success('Order placed successfully!');
-
       clearCart();
       setIsSuccess(true);
     } catch (error) {
-      toast.error('Failed to place order. Please try again.');
+      console.error('Submission error:', error);
+      toast.error(error.message || 'Failed to place order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -171,7 +171,7 @@ const FeaturedProducts = () => {
     }
 
     return {
-      text: `Add to Cart - $${product.price.toFixed(2)}`,
+      text: `Add to Cart - $${Number(product.price).toFixed(2)}`,
       bgColor: 'bg-gradient-to-r from-blue-500 to-purple-500',
       textColor: 'text-white',
       icon: <ShoppingBag size={16} className="mr-1 sm:mr-2" />
@@ -231,8 +231,8 @@ const FeaturedProducts = () => {
                       <span
                         key={`${product.id}-${tag}`}
                         className={`px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${tag === product.tags[0]
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                            : 'bg-white text-gray-700'
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                          : 'bg-white text-gray-700'
                           }`}
                       >
                         {tag}
@@ -311,10 +311,10 @@ const FeaturedProducts = () => {
                     <div className="mb-3">
                       <div className="flex items-center">
                         <span className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                          ${product.price.toFixed(2)}
+                          ${Number(product.price).toFixed(2)}
                         </span>
                         <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-400 line-through">
-                          ${product.originalPrice.toFixed(2)}
+                          ${Number(product.originalPrice).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -371,8 +371,8 @@ const FeaturedProducts = () => {
                 key={product.id}
                 onClick={() => setCurrentSlide(index)}
                 className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-colors ${index === currentSlide
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500'
-                    : 'bg-gray-300'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500'
+                  : 'bg-gray-300'
                   }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -437,10 +437,10 @@ const FeaturedProducts = () => {
                     <span className="text-gray-500">{quickViewProduct.reviewCount} reviews</span>
                   </div>
                   <div className="mb-6">
-                    <span className="text-3xl font-bold text-gray-900">${quickViewProduct.price.toFixed(2)}</span>
-                    <span className="ml-2 text-lg text-gray-400 line-through">${quickViewProduct.originalPrice.toFixed(2)}</span>
+                    <span className="text-3xl font-bold text-gray-900">${Number(quickViewProduct.price).toFixed(2)}</span>
+                    <span className="ml-2 text-lg text-gray-400 line-through">${Number(quickViewProduct.originalPrice).toFixed(2)}</span>
                     <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 rounded-full text-sm">
-                      Save ${(quickViewProduct.originalPrice - quickViewProduct.price).toFixed(2)}
+                      Save ${(Number(quickViewProduct.originalPrice) - Number(quickViewProduct.price)).toFixed(2)}
                     </span>
                   </div>
                   <button
@@ -450,7 +450,7 @@ const FeaturedProducts = () => {
                     }}
                     className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-bold hover:opacity-90 transition-opacity"
                   >
-                    Add to Cart - ${quickViewProduct.price.toFixed(2)}
+                    Add to Cart - ${Number(quickViewProduct.price).toFixed(2)}
                   </button>
                 </div>
               </div>

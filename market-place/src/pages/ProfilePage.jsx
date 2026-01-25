@@ -3,8 +3,8 @@ import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/useCart';
 import { Button, Input, Alert, Badge, Avatar } from '../components/ui';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { 
-  User, Mail, Phone, MapPin, Edit2, Save, X, 
+import {
+  User, Mail, Phone, MapPin, Edit2, Save, X,
   Lock, Bell, Shield, Package, Heart, Settings,
   CreditCard, LogOut, Calendar, CheckCircle, Eye, EyeOff,
   Star, TrendingUp, ShoppingCart, Award, Download,
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const ProfilePage = () => {
-  const { user, updateProfile, logout } = useAuth();
+  const { user, updateProfile, logout, switchToSeller } = useAuth();
   const { orderHistory = [], wishlist = [] } = useCart();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -62,18 +62,18 @@ const ProfilePage = () => {
 
     try {
       await updateProfile(formData);
-      setMessage({ 
-        type: 'success', 
-        text: '✅ Profile updated successfully!' 
+      setMessage({
+        type: 'success',
+        text: '✅ Profile updated successfully!'
       });
       setTimeout(() => {
         setIsEditing(false);
         setMessage({ type: '', text: '' });
       }, 3000);
     } catch {
-      setMessage({ 
-        type: 'error', 
-        text: '❌ Failed to update profile. Please try again.' 
+      setMessage({
+        type: 'error',
+        text: '❌ Failed to update profile. Please try again.'
       });
     } finally {
       setLoading(false);
@@ -125,7 +125,7 @@ const ProfilePage = () => {
               Manage your profile, orders, and preferences
             </p>
           </div>
-          
+
           <Button
             variant="danger"
             onClick={handleLogout}
@@ -139,7 +139,7 @@ const ProfilePage = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat) => (
-            <div 
+            <div
               key={stat.label}
               className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
             >
@@ -179,8 +179,8 @@ const ProfilePage = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`
                         flex items-center gap-3 px-6 py-4 font-medium whitespace-nowrap transition-all duration-300
-                        ${activeTab === tab.id 
-                          ? `bg-${tab.color}-50 text-${tab.color}-600 border-b-2 border-${tab.color}-500` 
+                        ${activeTab === tab.id
+                          ? `bg-${tab.color}-50 text-${tab.color}-600 border-b-2 border-${tab.color}-500`
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                         }
                       `}
@@ -203,7 +203,7 @@ const ProfilePage = () => {
                     {/* Profile Header */}
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                       <div className="relative group">
-                        <Avatar 
+                        <Avatar
                           size="2xl"
                           src={user?.avatar}
                           name={formData.name}
@@ -213,7 +213,7 @@ const ProfilePage = () => {
                           <Camera size={20} />
                         </button>
                       </div>
-                      
+
                       <div className="flex-1">
                         <div className="flex items-center gap-4 mb-3">
                           <h2 className="text-2xl font-bold text-gray-900">{formData.name}</h2>
@@ -224,7 +224,7 @@ const ProfilePage = () => {
                         <p className="text-gray-600 mb-4">{formData.email}</p>
                         <p className="text-gray-700 max-w-2xl">{formData.bio}</p>
                       </div>
-                      
+
                       <Button
                         onClick={() => setIsEditing(!isEditing)}
                         variant={isEditing ? "outline" : "primary"}
@@ -244,8 +244,8 @@ const ProfilePage = () => {
 
                     {/* Message Alert */}
                     {message.text && (
-                      <Alert 
-                        type={message.type} 
+                      <Alert
+                        type={message.type}
                         message={message.text}
                         className="animate-slide-down"
                       />
@@ -328,8 +328,8 @@ const ProfilePage = () => {
                           </div>
                         </div>
                         <div className="flex gap-4 pt-4">
-                          <Button 
-                            type="submit" 
+                          <Button
+                            type="submit"
                             className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
                             disabled={loading}
                           >
@@ -367,7 +367,7 @@ const ProfilePage = () => {
                             { label: 'Account Status', value: 'Active', icon: <CheckCircle className="text-green-500" /> },
                             { label: 'Last Login', value: 'Today, 10:30 AM', icon: <ShieldCheck className="text-blue-500" /> },
                           ].map((item) => (
-                            <div 
+                            <div
                               key={item.label}
                               className="group p-4 bg-gray-50 rounded-xl hover:bg-white transition-all duration-300 hover:shadow-md cursor-pointer animate-fade-in"
                             >
@@ -408,10 +408,10 @@ const ProfilePage = () => {
                         <Download size={16} /> Export
                       </Button>
                     </div>
-                    
+
                     <div className="space-y-4">
                       {mockOrders.map((order) => (
-                        <div 
+                        <div
                           key={order.id}
                           className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                         >
@@ -420,7 +420,7 @@ const ProfilePage = () => {
                               <div className="flex items-center gap-3 mb-2">
                                 <Package size={20} className="text-blue-500" />
                                 <span className="font-semibold text-gray-900">{order.id}</span>
-                                <Badge 
+                                <Badge
                                   variant={getStatusBadgeVariant(order.status)}
                                   className="capitalize"
                                 >
@@ -462,7 +462,7 @@ const ProfilePage = () => {
                 {activeTab === 'security' && (
                   <div className="space-y-6">
                     <h3 className="text-xl font-semibold text-gray-900">Security Settings</h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {[
                         {
@@ -498,7 +498,7 @@ const ProfilePage = () => {
                           color: 'orange'
                         },
                       ].map((item) => (
-                        <div 
+                        <div
                           key={item.id}
                           className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all"
                         >
@@ -524,7 +524,7 @@ const ProfilePage = () => {
                 {activeTab === 'settings' && (
                   <div className="space-y-6">
                     <h3 className="text-xl font-semibold text-gray-900">Account Settings</h3>
-                    
+
                     <div className="space-y-4">
                       {[
                         { id: 1, label: 'Email Notifications', value: true, icon: <BellIcon size={18} /> },
@@ -532,7 +532,7 @@ const ProfilePage = () => {
                         { id: 3, label: 'Marketing Emails', value: true, icon: <Mail size={18} /> },
                         { id: 4, label: 'Security Alerts', value: true, icon: <Shield size={18} /> },
                       ].map((setting) => (
-                        <div 
+                        <div
                           key={setting.id}
                           className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-white transition-colors"
                         >
@@ -548,9 +548,9 @@ const ProfilePage = () => {
                             </div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer" 
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
                               checked={setting.value}
                               readOnly
                             />
@@ -563,15 +563,15 @@ const ProfilePage = () => {
                     <div className="pt-6 border-t border-gray-200">
                       <h4 className="font-semibold text-gray-900 mb-4">Danger Zone</h4>
                       <div className="flex flex-col sm:flex-row gap-4">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="text-red-600 border-red-200 hover:bg-red-50"
                         >
                           <Trash2 size={18} className="mr-2" />
                           Delete Account
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="text-amber-600 border-amber-200 hover:bg-amber-50"
                         >
                           <Download size={18} className="mr-2" />
@@ -596,10 +596,10 @@ const ProfilePage = () => {
                 </h3>
                 <Badge variant="pink">{mockWishlist.length} items</Badge>
               </div>
-              
+
               <div className="space-y-4">
                 {mockWishlist.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
                   >
@@ -618,7 +618,7 @@ const ProfilePage = () => {
                   </div>
                 ))}
               </div>
-              
+
               <Button variant="outline" className="w-full mt-6">
                 View All Wishlist
               </Button>
@@ -627,7 +627,7 @@ const ProfilePage = () => {
             {/* Recent Activity */}
             <div className="bg-white rounded-2xl shadow-xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
-              
+
               <div className="space-y-4">
                 {[
                   { id: 1, action: 'Order placed', detail: 'ORD-004', time: '2 hours ago', icon: <ShoppingCart size={16} />, color: 'green' },
@@ -635,7 +635,7 @@ const ProfilePage = () => {
                   { id: 3, action: 'Password changed', detail: 'Security update', time: '2 days ago', icon: <Lock size={16} />, color: 'purple' },
                   { id: 4, action: 'Review added', detail: '4 stars', time: '3 days ago', icon: <Star size={16} />, color: 'amber' },
                 ].map((activity) => (
-                  <div 
+                  <div
                     key={activity.id}
                     className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                   >
@@ -659,7 +659,7 @@ const ProfilePage = () => {
             {/* Quick Stats */}
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
               <h3 className="text-lg font-semibold mb-6">Account Summary</h3>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span>Orders Completed</span>
@@ -680,7 +680,7 @@ const ProfilePage = () => {
                   <span className="font-bold">2</span>
                 </div>
               </div>
-              
+
               <div className="mt-8 pt-6 border-t border-white/20">
                 <div className="flex items-center gap-2">
                   <Award size={20} />
@@ -692,6 +692,48 @@ const ProfilePage = () => {
                 <p className="text-xs mt-2 text-white/90">75% to Platinum Level</p>
               </div>
             </div>
+
+            {/* Become a Seller Section */}
+            {user?.role === 'buyer' && (
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
+                <div className="absolute top-0 right-0 -m-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-white/20 rounded-lg text-white">
+                      <TrendingUp size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold">Start Selling</h3>
+                  </div>
+                  <p className="text-blue-100 text-sm mb-6 leading-relaxed">
+                    Open your shop today and reach thousands of customers. Easy setup, low fees.
+                  </p>
+                  <Button
+                    onClick={async () => {
+                      if (globalThis.confirm('Are you sure you want to upgrade your account to a Seller account?')) {
+                        setLoading(true);
+                        try {
+                          const result = await switchToSeller();
+                          if (result.success) {
+                            setMessage({ type: 'success', text: '🎉 Congratulations! You are now a seller!' });
+                            globalThis.scrollTo({ top: 0, behavior: 'smooth' });
+                          } else {
+                            setMessage({ type: 'error', text: result.message });
+                          }
+                        } catch (err) {
+                          setMessage({ type: 'error', text: 'Failed to upgrade account' });
+                        } finally {
+                          setLoading(false);
+                        }
+                      }
+                    }}
+                    className="w-full bg-white text-indigo-600 hover:bg-blue-50 font-bold border-none py-3"
+                    disabled={loading}
+                  >
+                    {loading ? <LoadingSpinner size="small" /> : 'Become a Seller'}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="bg-white rounded-2xl shadow-xl p-6">

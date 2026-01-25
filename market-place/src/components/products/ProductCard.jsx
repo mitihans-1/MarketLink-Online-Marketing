@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { ShoppingCart, Heart, Eye, Check } from 'lucide-react';
-import  {useCart}  from '../../context/useCart';
+import { useCart } from '../../context/useCart';
 
 const ProductCard = ({ product }) => {
   const { cartItems, addToCart } = useCart();
@@ -13,14 +13,14 @@ const ProductCard = ({ product }) => {
 
   // Check if product is already in cart
   const isInCart = cartItems.some(item => item.id === product.id);
-  const savings = product.originalPrice 
-    ? product.originalPrice - (product.price || 0)
-    : 0;
+  const price = Number(product.price || 0);
+  const originalPrice = product.originalPrice ? Number(product.originalPrice) : null;
+  const savings = originalPrice ? originalPrice - price : 0;
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isInCart) {
       // Navigate to cart page if already in cart
       globalThis.location.href = '/cart';
@@ -28,16 +28,16 @@ const ProductCard = ({ product }) => {
     }
 
     setIsAdding(true);
-    
+
     try {
       await addToCart({
         id: product.id,
         name: product.name,
-        price: product.price || 0,
+        price: price,
         image: product.image,
         quantity: 1
       });
-      
+
       setShowAddedMessage(true);
       setTimeout(() => setShowAddedMessage(false), 2000);
     } catch (error) {
@@ -135,12 +135,16 @@ const ProductCard = ({ product }) => {
         {/* Product Image */}
         <div className="relative h-48 overflow-hidden bg-gray-100">
           <img
-            src={product.image || 'https://via.placeholder.com/300x300?text=Product'}
+            src={product.image || product.image_url || 'https://via.placeholder.com/300x300?text=Product'}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://via.placeholder.com/300x300?text=Product+Image';
+            }}
           />
-          
+
           {/* Quick Actions Overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
             <button
@@ -157,9 +161,9 @@ const ProductCard = ({ product }) => {
               type="button"
               aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             >
-              <Heart 
-                size={20} 
-                className={isWishlisted ? "text-red-500 fill-red-500" : "text-gray-700"} 
+              <Heart
+                size={20}
+                className={isWishlisted ? "text-red-500 fill-red-500" : "text-gray-700"}
               />
             </button>
           </div>
@@ -174,7 +178,7 @@ const ProductCard = ({ product }) => {
             {product.category}
           </span>
         )}
-        
+
         {/* Product Name */}
         <Link to={`/product/${product.id}`} className="block">
           <h3 className="text-lg font-semibold text-gray-800 mt-1 hover:text-blue-600 transition-colors line-clamp-2 h-14">
@@ -186,11 +190,11 @@ const ProductCard = ({ product }) => {
         <div className="flex items-center mt-3">
           <div>
             <span className="text-xl font-bold text-gray-900">
-              ${(product.price || 0).toFixed(2)}
+              ${price.toFixed(2)}
             </span>
-            {product.originalPrice && (
+            {originalPrice && (
               <span className="text-sm text-gray-500 line-through ml-2">
-                ${product.originalPrice.toFixed(2)}
+                ${originalPrice.toFixed(2)}
               </span>
             )}
             {savings > 0 && (

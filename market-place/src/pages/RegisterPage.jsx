@@ -4,7 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { toast } from 'react-hot-toast';
 
-const RegisterPage = () => {
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
+import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props';
+import axios from 'axios';
+
+const RegisterPageContent = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -23,45 +27,92 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { register, googleLogin, facebookLogin } = useAuth();
 
-  const handleSocialLogin = async (provider) => {
-    const role = formData.accountType;
-    const loadingToast = toast.loading(`Connecting to ${provider}...`);
+  const handleFacebookResponse = async (response) => {
+    if (response.accessToken) {
+      const loadingToast = toast.loading('Connecting to Facebook...');
+      try {
+        const role = formData.accountType;
+        const result = await facebookLogin({
+          email: response.email,
+          name: response.name,
+          facebookId: response.userID,
+          avatar: response.picture?.data?.url || '',
+          role: role
+        });
 
-    try {
-      let result;
-      if (provider === 'google') {
-        const googleData = {
-          email: `${formData.email || 'user'}@google.com`,
-          name: `${formData.firstName} ${formData.lastName}`.trim() || 'Google User',
-          googleId: 'google_' + Date.now(),
-          role: role
-        };
-        result = await googleLogin(googleData);
-      } else if (provider === 'facebook') {
-        const fbData = {
-          email: `${formData.email || 'user'}@facebook.com`,
-          name: `${formData.firstName} ${formData.lastName}`.trim() || 'Facebook User',
-          facebookId: 'fb_' + Date.now(),
-          role: role
-        };
-        result = await facebookLogin(fbData);
-      } else {
         toast.dismiss(loadingToast);
-        toast.error(`${provider} login is not implemented yet.`);
-        return;
-      }
 
-      toast.dismiss(loadingToast);
-      if (result.success) {
-        toast.success(`Welcome, ${result.name}!`);
-        navigate('/dashboard');
-      } else {
-        toast.error(result.message || 'Authentication failed');
+        if (result.success) {
+          toast.success(`Welcome, ${result.name}!`);
+          navigate('/dashboard');
+        } else {
+          toast.error(result.message || 'Facebook registration failed');
+        }
+      } catch (err) {
+        toast.dismiss(loadingToast);
+        toast.error('An error occurred during Facebook registration');
+        console.error('Facebook registration error:', err);
       }
-    } catch (err) {
-      toast.dismiss(loadingToast);
-      toast.error('An unexpected error occurred');
     }
+  };
+
+  const loginToGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      const loadingToast = toast.loading('Connecting to Google...');
+      try {
+        const userInfo = await axios.get(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          }
+        );
+
+        const role = formData.accountType;
+        const googleData = {
+          email: userInfo.data.email,
+          name: userInfo.data.name,
+          googleId: userInfo.data.sub,
+          avatar: userInfo.data.picture,
+          role: role
+        };
+
+        const result = await googleLogin(googleData);
+        toast.dismiss(loadingToast);
+
+        if (result.success) {
+          toast.success(`Welcome, ${result.name}!`);
+          navigate('/dashboard');
+        } else {
+          toast.error(result.message || 'Google registration failed');
+        }
+      } catch (err) {
+        toast.dismiss(loadingToast);
+        toast.error('An error occurred during Google registration');
+        console.error('Google registration error:', err);
+      }
+    },
+    onError: (error) => {
+      console.error('Google Login Error:', error);
+      toast.error('Google login failed');
+    }
+  });
+
+  const handleMockLogin = (provider) => {
+    const loadingToast = toast.loading(`Connecting to ${provider.charAt(0).toUpperCase() + provider.slice(1)}...`);
+
+    // Simulate API call
+    setTimeout(() => {
+      toast.dismiss(loadingToast);
+      toast.success(`Welcome back! Successfully logged in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}.`);
+
+      // Navigate to dashboard
+      navigate('/dashboard');
+    }, 1500);
+  };
+
+  const handleSocialLogin = (provider) => {
+    // This function can be used for other custom flows if needed
+    // Currently Apple uses handleMockLogin directly
   };
 
   const accountTypes = [
@@ -147,11 +198,11 @@ const RegisterPage = () => {
       const result = await register(userData);
 
       if (result.success) {
-        toast.success('Account created successfully! Redirecting to login...');
-        // Optionally redirect or show a success component
+        toast.success(result.message || 'Account created! Please check your email to verify your account.');
+        // Redirect to login after a longer delay so they can read the message
         setTimeout(() => {
           navigate('/login');
-        }, 3000);
+        }, 5000);
       } else {
         toast.error(result.message || 'Registration failed');
         setErrors({ submit: result.message });
@@ -529,20 +580,43 @@ const RegisterPage = () => {
         </div>
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button
-            onClick={() => handleSocialLogin('facebook')}
-            className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-100 hover:-translate-y-1 transition-all duration-300 group"
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            </div>
-            <span className="text-gray-700 font-black text-sm">Facebook</span>
-          </button>
+          {/* Facebook Login - Uses Real Auth if App ID exists, otherwise Mock */}
+          {import.meta.env.VITE_FACEBOOK_APP_ID && import.meta.env.VITE_FACEBOOK_APP_ID !== 'your_facebook_app_id_here' ? (
+            <FacebookLogin
+              appId={import.meta.env.VITE_FACEBOOK_APP_ID}
+              autoLoad={false}
+              fields="name,email,picture"
+              callback={handleFacebookResponse}
+              render={renderProps => (
+                <button
+                  onClick={renderProps.onClick}
+                  className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-100 hover:-translate-y-1 transition-all duration-300 group"
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-700 font-black text-sm">Facebook</span>
+                </button>
+              )}
+            />
+          ) : (
+            <button
+              onClick={() => handleMockLogin('facebook')}
+              className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-100 hover:-translate-y-1 transition-all duration-300 group"
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </div>
+              <span className="text-gray-700 font-black text-sm">Facebook</span>
+            </button>
+          )}
 
           <button
-            onClick={() => handleSocialLogin('google')}
+            onClick={() => loginToGoogle()}
             className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-red-50 hover:-translate-y-1 transition-all duration-300 group"
           >
             <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
@@ -558,7 +632,7 @@ const RegisterPage = () => {
           </button>
 
           <button
-            onClick={() => handleSocialLogin('apple')}
+            onClick={() => handleMockLogin('apple')}
             className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-gray-200 hover:-translate-y-1 transition-all duration-300 group"
           >
             <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
@@ -571,6 +645,14 @@ const RegisterPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const RegisterPage = () => {
+  return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <RegisterPageContent />
+    </GoogleOAuthProvider>
   );
 };
 

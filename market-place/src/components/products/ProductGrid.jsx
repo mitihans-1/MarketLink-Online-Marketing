@@ -37,11 +37,21 @@ const featuredProducts = [
   }
 ];
 
-const ProductGrid = ({ products = featuredProducts }) => {
+const ProductGrid = ({ products = featuredProducts, title = "Featured Products", layout = "scroll" }) => {
+  if (layout === "grid") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       <h2 className="text-[#111318] text-xl sm:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-        Featured Products
+        {title}
       </h2>
       <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-4">
         <div className="flex items-stretch p-4 gap-4 min-w-0">
@@ -64,14 +74,18 @@ ProductGrid.propTypes = {
       name: PropTypes.string.isRequired,
       price: PropTypes.number.isRequired,
       image: PropTypes.string.isRequired,
-      link: PropTypes.string.isRequired,
+      link: PropTypes.string,
       category: PropTypes.string,
     })
   ),
+  title: PropTypes.string,
+  layout: PropTypes.oneOf(['scroll', 'grid']),
 };
 
 ProductGrid.defaultProps = {
   products: featuredProducts,
+  title: "Featured Products",
+  layout: "scroll",
 };
 
 export default ProductGrid;

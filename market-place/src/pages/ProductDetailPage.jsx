@@ -23,24 +23,16 @@ const ProductDetailPage = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const data = await productService.getProductById(productId);
+        const productData = await productService.getProductById(productId);
 
-        // Ensure image is an array (DB might have it as a single string)
-        const productData = {
-          ...data,
-          images: Array.isArray(data.image_url)
-            ? data.image_url
-            : data.image_url
-              ? [data.image_url]
-              : ['https://via.placeholder.com/800x600?text=No+Image'],
-          category: data.category_name || data.category || 'General',
-          // Mock some extra fields if they don't exist in DB yet
-          features: data.features || [],
-          specifications: data.specifications || {
+        // Add mock fields if they don't exist in DB yet
+        if (!productData.features) productData.features = [];
+        if (!productData.specifications) {
+          productData.specifications = {
             condition: 'New',
             delivery: 'Available'
-          }
-        };
+          };
+        }
 
         setProduct(productData);
       } catch (err) {
@@ -229,11 +221,11 @@ const ProductDetailPage = () => {
           {/* Product Images */}
           <div>
             {/* Main Image */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-4">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-4 h-96">
               <img
-                src={product.images[selectedImage]}
+                src={product.images?.[selectedImage] || product.image || product.image_url || 'https://via.placeholder.com/800x600?text=Product'}
                 alt={product.name}
-                className="w-full h-96 object-cover"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = 'https://via.placeholder.com/800x600?text=Product+Image';

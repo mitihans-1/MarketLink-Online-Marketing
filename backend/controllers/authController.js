@@ -42,8 +42,8 @@ const registerUser = async (req, res) => {
 
         const userId = result.insertId;
 
-        // Send verification email (Optional now but kept for logic, users can still login)
-        const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+        // Send verification email
+        const verificationUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/auth/verify-email/${verificationToken}`;
 
         const message = `Please verify your email by clicking the link: ${verificationUrl}`;
         const html = `
@@ -52,7 +52,6 @@ const registerUser = async (req, res) => {
             <a href="${verificationUrl}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
         `;
 
-        console.log(`Attempting to send verification email to: ${email}`);
         try {
             await sendEmail({
                 email: email,
@@ -60,16 +59,14 @@ const registerUser = async (req, res) => {
                 message,
                 html
             });
-            console.log('Notification email sent successfully');
-
             res.status(201).json({
-                message: 'Registration successful! You can now log in.',
+                message: 'Registration successful! Please check your email to verify your account.',
                 success: true
             });
         } catch (emailError) {
             console.error('Email sending failed (non-critical):', emailError);
             res.status(201).json({
-                message: 'Registration successful! You can now log in.',
+                message: 'Registration successful! However, we could not send a verification email. Please contact support.',
                 success: true
             });
         }
@@ -85,85 +82,54 @@ const verifyEmail = async (req, res) => {
     const { token } = req.params;
 
     try {
-        console.log(`Verifying token: ${token}`);
         const [users] = await db.query('SELECT * FROM users WHERE verification_token = ?', [token]);
 
         if (users.length === 0) {
-            console.log(`Verification failed: Token not found or already used.`);
-            return res.status(400).json({ message: 'Invalid or expired verification token' });
+            return res.redirect(`${process.env.FRONTEND_URL}/login?verified=false&message=invalid_token`);
         }
 
         const user = users[0];
-        console.log(`Found user for verification: ${user.email} (ID: ${user.id})`);
-
-        const [updateResult] = await db.query(
+        await db.query(
             'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE id = ?',
             [user.id]
         );
-        console.log(`Update result for user ${user.id}:`, updateResult);
 
-        res.json({ message: 'Email verified successfully! You can now log in.', success: true });
+        res.redirect(`${process.env.FRONTEND_URL}/login?verified=true`);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        res.redirect(`${process.env.FRONTEND_URL}/login?verified=false&message=server_error`);
     }
 };
 
 // @desc    Authenticate with Google
 // @route   POST /api/auth/google
 const googleAuth = async (req, res) => {
-    const { email, name, googleId, avatar, role } = req.body;
+    const { email, name, avatar, role } = req.body;
 
     try {
-        // Check if user exists
         const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
         let user = users[0];
 
         if (!user) {
-            // Register new user
-            const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+            const generatedPassword = Math.random().toString(36).slice(-8);
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
             const [result] = await db.query(
                 'INSERT INTO users (name, email, password, role, is_verified, avatar) VALUES (?, ?, ?, ?, ?, ?)',
-                [name || email.split('@')[0], email, hashedPassword, role || 'buyer', true, avatar || '']
+                [name || email.split('@')[0], email, hashedPassword, role || 'user', true, avatar || '']
             );
 
             const [newUsers] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
             user = newUsers[0];
-
-            // Send welcome email for Google registration
-            try {
-                const message = `
-                    <h1>Welcome to MarketLink!</h1>
-                    <p>You have successfully registered using your Google account.</p>
-                    <p>We are excited to have you on board.</p>
-                    <br>
-                    <p>Best Regards,</p>
-                    <p>The MarketLink Team</p>
-                `;
-
-                await sendEmail({
-                    email: user.email,
-                    subject: 'Welcome to MarketLink',
-                    message: 'Welcome to MarketLink! Your account has been created via Google.',
-                    html: message
-                });
-                console.log(`Welcome email sent to Google user: ${user.email}`);
-            } catch (emailError) {
-                console.error('Failed to send welcome email (Google):', emailError);
-            }
         }
 
-        // Return token and user info
         res.json({
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
             avatar: user.avatar,
-            storeName: user.store_name,
             token: generateToken(user.id),
             success: true
         });
@@ -177,58 +143,32 @@ const googleAuth = async (req, res) => {
 // @desc    Authenticate with Facebook
 // @route   POST /api/auth/facebook
 const facebookAuth = async (req, res) => {
-    const { email, name, facebookId, avatar, role } = req.body;
+    const { email, name, avatar, role } = req.body;
 
     try {
-        // Check if user exists
         const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
         let user = users[0];
 
         if (!user) {
-            // Register new user
-            const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+            const generatedPassword = Math.random().toString(36).slice(-8);
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
             const [result] = await db.query(
                 'INSERT INTO users (name, email, password, role, is_verified, avatar) VALUES (?, ?, ?, ?, ?, ?)',
-                [name || email.split('@')[0], email, hashedPassword, role || 'buyer', true, avatar || '']
+                [name || email.split('@')[0], email, hashedPassword, role || 'user', true, avatar || '']
             );
 
             const [newUsers] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
             user = newUsers[0];
-
-            // Send welcome email for Facebook registration
-            try {
-                const message = `
-                    <h1>Welcome to MarketLink!</h1>
-                    <p>You have successfully registered using your Facebook account.</p>
-                    <p>We are excited to have you on board.</p>
-                    <br>
-                    <p>Best Regards,</p>
-                    <p>The MarketLink Team</p>
-                `;
-
-                await sendEmail({
-                    email: user.email,
-                    subject: 'Welcome to MarketLink',
-                    message: 'Welcome to MarketLink! Your account has been created via Facebook.',
-                    html: message
-                });
-                console.log(`Welcome email sent to Facebook user: ${user.email}`);
-            } catch (emailError) {
-                console.error('Failed to send welcome email (Facebook):', emailError);
-            }
         }
 
-        // Return token and user info
         res.json({
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
             avatar: user.avatar,
-            storeName: user.store_name,
             token: generateToken(user.id),
             success: true
         });
@@ -245,12 +185,10 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Check for user email
         const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
         const user = users[0];
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            // Email verification check bypassed as requested (default verified)
             if (!user.is_verified) {
                 return res.status(401).json({ message: 'Please verify your email before logging in' });
             }
@@ -260,7 +198,6 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 avatar: user.avatar,
-                storeName: user.store_name,
                 token: generateToken(user.id),
                 success: true
             });
@@ -273,10 +210,117 @@ const loginUser = async (req, res) => {
     }
 };
 
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getUserProfile = async (req, res) => {
+    try {
+        const [users] = await db.query('SELECT id, name, email, role, avatar, phone, address, bio FROM users WHERE id = ?', [req.user.id]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(users[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+    const { name, phone, address, bio } = req.body;
+
+    try {
+        await db.query(
+            'UPDATE users SET name = ?, phone = ?, address = ?, bio = ? WHERE id = ?',
+            [name, phone, address, bio, req.user.id]
+        );
+
+        const [users] = await db.query('SELECT id, name, email, role, avatar, phone, address, bio FROM users WHERE id = ?', [req.user.id]);
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: users[0]
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get all users
+// @route   GET /api/auth/users
+// @access  Private/Admin
+const getAllUsers = async (req, res) => {
+    try {
+        const [users] = await db.query('SELECT id, name, email, role, created_at, avatar FROM users ORDER BY created_at DESC');
+        res.json(users);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update user role
+// @route   PUT /api/auth/users/:id/role
+// @access  Private/Admin
+const updateUserRole = async (req, res) => {
+    const { role } = req.body;
+    try {
+        await db.query('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
+        res.json({ message: 'User role updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/auth/users/:id
+// @access  Private/Admin
+const deleteUser = async (req, res) => {
+    try {
+        await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);
+        res.json({ message: 'User removed' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Switch user role to seller
+// @route   POST /api/auth/switch-to-seller
+// @access  Private
+const switchToSeller = async (req, res) => {
+    try {
+        // Update user role to 'both'
+        await db.query('UPDATE users SET role = ? WHERE id = ?', ['both', req.user.id]);
+
+        const [users] = await db.query('SELECT id, name, email, role, avatar FROM users WHERE id = ?', [req.user.id]);
+
+        res.json({
+            message: 'Account upgraded to seller successfully!',
+            user: users[0],
+            success: true
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     verifyEmail,
     googleAuth,
-    facebookAuth
+    facebookAuth,
+    getUserProfile,
+    updateUserProfile,
+    getAllUsers,
+    updateUserRole,
+    deleteUser,
+    switchToSeller
 };
