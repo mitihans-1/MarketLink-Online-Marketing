@@ -58,6 +58,7 @@ import AccessibilityPage from '../pages/AccessibilityPage';
 import CookiesPage from '../pages/CookiesPage';
 import PaymentMethodsPage from '../pages/PaymentMethodsPage';
 import UnauthorizedPage from '../pages/UnauthorizedPage';
+import PriceMatchPage from '../pages/PriceMatchPage';
 
 const AppRoutes = () => {
   const { loading } = useAuth();
@@ -106,6 +107,7 @@ const AppRoutes = () => {
         <Route path="/cookies" element={<CookiesPage />} />
         <Route path="/payment-methods" element={<PaymentMethodsPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/price-match" element={<PriceMatchPage />} />
 
         {/* Protected Routes - Still inside MainLayout */}
         <Route path="/cart" element={

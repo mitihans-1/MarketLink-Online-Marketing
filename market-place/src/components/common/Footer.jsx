@@ -47,7 +47,7 @@ const Footer = () => {
     ],
     'Features': [
       { name: 'Secure Payments', path: '/security', icon: <Shield size={16} /> },
-      { name: 'Fast Delivery', path: '/shipping', icon: <Truck size={16} /> },
+      { name: 'Fast Delivery', path: '/shipping-info', icon: <Truck size={16} /> },
       { name: 'Easy Returns', path: '/returns', icon: <ShoppingBag size={16} /> },
       { name: 'Price Match', path: '/price-match', icon: <CreditCard size={16} /> },
     ]
