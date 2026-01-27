@@ -1,6 +1,7 @@
 ﻿// src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.jsx';
+import ScrollToTop from "../components/common/ScrollToTop";
 
 // Import layouts
 import MainLayout from '../components/layout/MainLayout';
