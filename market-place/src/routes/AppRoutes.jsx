@@ -112,7 +112,8 @@ const AppRoutes = () => {
           <Route path="/payment-methods" element={<PaymentMethodsPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/price-match" element={<PriceMatchPage />} />
-
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           {/* Protected Routes - Still inside MainLayout */}
           <Route path="/cart" element={
             <ProtectedRoute>

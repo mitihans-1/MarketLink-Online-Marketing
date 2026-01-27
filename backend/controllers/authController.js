@@ -4,6 +4,28 @@ const crypto = require('crypto');
 const db = require('../config/db');
 const sendEmail = require('../utils/sendEmail');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password
+ *       properties:
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *         password:
+ *           type: string
+ *         role:
+ *           type: string
+ *           enum: [user, seller, admin]
+ */
+
 // Generate JWT
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -179,6 +201,32 @@ const facebookAuth = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Authenticate user and get token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
 // @desc    Authenticate a user
 // @route   POST /api/auth/login
 const loginUser = async (req, res) => {
@@ -311,7 +359,30 @@ const switchToSeller = async (req, res) => {
     }
 };
 
-// @desc    Request password reset
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset code (Step 1)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reset code sent to email
+ *       404:
+ *         description: User not found
+ */
+// @desc    Request password reset (Step 1)
 // @route   POST /api/auth/forgot-password
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -319,99 +390,173 @@ const forgotPassword = async (req, res) => {
     try {
         const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
 
-        // Always respond with a generic message to avoid revealing whether the email exists
-        const genericResponse = { message: 'If an account with that email exists, you will receive a password reset email.' };
-
         if (users.length === 0) {
-            return res.json(genericResponse);
+            return res.status(404).json({ message: 'User with this email does not exist' });
         }
 
         const user = users[0];
 
-        // Generate token and store only a hash of it
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        // Generate 6-digit code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        // Invalidate previous tokens for this user
+        // Invalidate previous codes for this user
         await db.query('UPDATE password_resets SET used = 1 WHERE user_id = ?', [user.id]);
 
         await db.query(
             'INSERT INTO password_resets (user_id, token_hash, expires_at, used) VALUES (?, ?, ?, ?)',
-            [user.id, tokenHash, expires, 0]
+            [user.id, resetCode, expires, 0]
         );
 
-        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&id=${user.id}`;
-
-        const message = `You requested a password reset. Click the link to reset your password: ${resetUrl}`;
+        const message = `Your password reset code is: ${resetCode}. It will expire in 10 minutes.`;
         const html = `
-            <h1>Password Reset</h1>
-            <p>If you requested this, click the button below to reset your password. If you didn't, you can safely ignore this email.</p>
-            <a href="${resetUrl}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e4e8; border-radius: 10px;">
+                <h2 style="color: #2563eb; text-align: center;">Reset Your Password</h2>
+                <p>You requested to reset your password. Use the verification code below to proceed:</p>
+                <div style="background: #f0f4f8; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                    <h1 style="font-size: 32px; letter-spacing: 5px; margin: 0; color: #102a43;">${resetCode}</h1>
+                </div>
+                <p>This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
+                <hr style="border: none; border-top: 1px solid #e1e4e8; margin: 20px 0;">
+                <p style="font-size: 12px; color: #627d98; text-align: center;">MarketLink - Online Marketing Platform</p>
+            </div>
         `;
 
         try {
             await sendEmail({
                 email: user.email,
-                subject: 'MarketLink - Password Reset',
+                subject: 'MarketLink - Password Reset Code',
                 message,
                 html
             });
+            res.json({ message: 'Reset code sent to your email' });
         } catch (emailError) {
-            // Log but do not fail the request — still return generic response
-            console.error('Password reset email failed (non-critical):', emailError);
+            console.error('Email sending failed:', emailError);
+            res.status(500).json({ message: 'Failed to send reset email' });
         }
-
-        return res.json(genericResponse);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
 
-// @desc    Reset password
-// @route   POST /api/auth/reset-password
-const resetPassword = async (req, res) => {
-    const { token, userId, password, confirmPassword } = req.body;
-
-    if (!token || !userId || !password || !confirmPassword) {
-        return res.status(400).json({ message: 'Invalid request' });
-    }
-
-    if (password !== confirmPassword) {
-        return res.status(400).json({ message: 'Passwords do not match' });
-    }
-
-    // Basic strong password check: min 8, uppercase, lowercase, number
-    const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!pwRegex.test(password)) {
-        return res.status(400).json({ message: 'Password must be at least 8 characters long and include uppercase, lowercase and a number' });
-    }
+/**
+ * @swagger
+ * /auth/verify-reset-code:
+ *   post:
+ *     summary: Verify the 6-digit reset code (Step 2)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Code verified successfully
+ *       400:
+ *         description: Invalid or expired code
+ */
+// @desc    Verify reset code (Step 2)
+// @route   POST /api/auth/verify-reset-code
+const verifyResetCode = async (req, res) => {
+    const { email, code } = req.body;
 
     try {
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = users[0];
 
         const [rows] = await db.query(
             'SELECT * FROM password_resets WHERE user_id = ? AND token_hash = ? AND used = 0 AND expires_at > ?',
-            [userId, tokenHash, new Date()]
+            [user.id, code, new Date()]
         );
 
         if (rows.length === 0) {
-            return res.status(400).json({ message: 'Invalid or expired token' });
+            return res.status(400).json({ message: 'Invalid or expired code' });
+        }
+
+        res.json({ message: 'Code verified successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password using code (Step 3)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Invalid code or token
+ */
+// @desc    Reset password (Step 3)
+// @route   POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+    const { email, code, newPassword } = req.body;
+
+    try {
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = users[0];
+
+        const [rows] = await db.query(
+            'SELECT * FROM password_resets WHERE user_id = ? AND token_hash = ? AND used = 0 AND expires_at > ?',
+            [user.id, code, new Date()]
+        );
+
+        if (rows.length === 0) {
+            return res.status(400).json({ message: 'Invalid or expired code' });
         }
 
         const resetEntry = rows[0];
 
         // Hash new password
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
 
         // Update user password
-        await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+        await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
 
-        // Mark token used and invalidate any other active tokens
+        // Mark code used
         await db.query('UPDATE password_resets SET used = 1 WHERE id = ?', [resetEntry.id]);
-        await db.query('UPDATE password_resets SET used = 1 WHERE user_id = ? AND used = 0', [userId]);
 
         res.json({ message: 'Password reset successful', success: true });
     } catch (error) {
@@ -431,8 +576,9 @@ module.exports = {
     getAllUsers,
     updateUserRole,
     deleteUser,
-    switchToSeller
+    switchToSeller,
+    forgotPassword,
+    verifyResetCode,
+    resetPassword
 };
 
-module.exports.forgotPassword = forgotPassword;
-module.exports.resetPassword = resetPassword;

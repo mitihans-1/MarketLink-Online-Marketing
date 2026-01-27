@@ -1,5 +1,87 @@
 const db = require('../config/db');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Product:
+ *       type: object
+ *       required:
+ *         - name
+ *         - price
+ *         - category_id
+ *       properties:
+ *         id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         price:
+ *           type: number
+ *         image_url:
+ *           type: string
+ *         category_id:
+ *           type: integer
+ *         stock:
+ *           type: integer
+ *         seller_id:
+ *           type: integer
+ *     Category:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         slug:
+ *           type: string
+ *         image_url:
+ *           type: string
+ */
+
+/**
+ * @swagger
+ * /products:
+ *   get:
+ *     summary: Get all products with filters
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Category name or slug
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [price-low, price-high, name, newest]
+ *     responses:
+ *       200:
+ *         description: List of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Product'
+ */
 // @desc    Get all products
 // @route   GET /api/products
 const getProducts = async (req, res) => {
@@ -65,6 +147,24 @@ const getProducts = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /products/{id}:
+ *   get:
+ *     summary: Get product by ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Product details
+ *       404:
+ *         description: Product not found
+ */
 // @desc    Get single product
 // @route   GET /api/products/:id
 const getProductById = async (req, res) => {
@@ -82,6 +182,32 @@ const getProductById = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /products:
+ *   post:
+ *     summary: Create a new product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, price, category_id]
+ *             properties:
+ *               name: { type: string }
+ *               description: { type: string }
+ *               price: { type: number }
+ *               image_url: { type: string }
+ *               category_id: { type: integer }
+ *               stock: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Product created successfully
+ */
 // @desc    Create a product
 // @route   POST /api/products
 // @access  Private/Seller
@@ -108,6 +234,16 @@ const createProduct = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /products/categories:
+ *   get:
+ *     summary: Get all categories
+ *     tags: [Categories]
+ *     responses:
+ *       200:
+ *         description: List of categories
+ */
 // @desc    Get all categories
 // @route   GET /api/products/categories
 const getCategories = async (req, res) => {
@@ -120,6 +256,28 @@ const getCategories = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /products/categories:
+ *   post:
+ *     summary: Create a new category
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name: { type: string }
+ *               image_url: { type: string }
+ *     responses:
+ *       201:
+ *         description: Category created
+ */
 // @desc    Create a category
 // @route   POST /api/products/categories
 // @access  Private/Admin or Seller
@@ -203,6 +361,18 @@ const deleteCategory = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /products/seller:
+ *   get:
+ *     summary: Get products belonging to the logged-in seller
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of seller products
+ */
 // @desc    Get products by seller
 // @route   GET /api/products/seller
 // @access  Private/Seller

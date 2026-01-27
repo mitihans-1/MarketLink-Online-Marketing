@@ -1,5 +1,57 @@
 const db = require('../config/db');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Order:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         total_amount:
+ *           type: number
+ *         status:
+ *           type: string
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /orders:
+ *   post:
+ *     summary: Create a new order
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               orderItems:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     quantity:
+ *                       type: integer
+ *                     price:
+ *                       type: number
+ *               shippingAddress:
+ *                 type: string
+ *               totalAmount:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Order created successfully
+ */
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
@@ -61,6 +113,18 @@ const createOrder = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /orders/myorders:
+ *   get:
+ *     summary: Get logged in user's orders
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user orders
+ */
 // @desc    Get logged in user orders
 // @route   GET /api/orders/myorders
 // @access  Private
@@ -87,6 +151,26 @@ const getMyOrders = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /orders/{id}:
+ *   get:
+ *     summary: Get order details by ID
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Order details
+ *       404:
+ *         description: Order not found
+ */
 // @desc    Get order by ID
 // @route   GET /api/orders/:id
 // @access  Private
@@ -115,6 +199,18 @@ const getOrderById = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /orders/seller/stats:
+ *   get:
+ *     summary: Get sales statistics for the logged-in seller
+ *     tags: [Stats]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seller statistics (Revenue, Orders, Items Sold)
+ */
 // @desc    Get seller stats
 // @route   GET /api/orders/seller/stats
 // @access  Private/Seller
@@ -193,6 +289,18 @@ const getSellerOrders = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /orders/admin/stats:
+ *   get:
+ *     summary: Get global administrative statistics
+ *     tags: [Stats]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin dashboard statistics
+ */
 // @desc    Get global admin stats
 // @route   GET /api/orders/admin/stats
 // @access  Private/Admin
