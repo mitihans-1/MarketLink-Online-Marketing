@@ -1,4 +1,4 @@
-# MarketLink - Online Marketing Platform
+Tittle -E-Commerce Online Marketing Platform
 
 **MarketLink** is a comprehensive e-commerce marketplace platform that connects buyers and sellers. It features user authentication, product management, order processing, and an interactive dashboard for both sellers and administrators.
 
