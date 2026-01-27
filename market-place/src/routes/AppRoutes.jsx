@@ -1,6 +1,6 @@
-﻿// src/routes/AppRoutes.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.jsx';
+import ScrollToTop from "../components/common/ScrollToTop";
 
 // Import layouts
 import MainLayout from '../components/layout/MainLayout';
@@ -74,115 +74,143 @@ const AppRoutes = () => {
   }
 
   return (
-    <Routes>
-      {/* MAIN LAYOUT FOR ALL PUBLIC PAGES */}
-      <Route element={<MainLayout />}>
-        {/* Public Routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/categories" element={<CategoriesPage />} />
-        <Route path="/category/:categoryId" element={<CategoryPage />} />
-        <Route path="/store/:sellerId" element={<SellerStorePage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/deals" element={<DealsPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/auth/google" element={<GoogleLoginPage />} />
-        <Route path="/auth/facebook" element={<FacebookLoginPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
+    <>
+      <ScrollToTop />
+      <Routes>
+        {/* MAIN LAYOUT FOR ALL PUBLIC PAGES */}
+        <Route element={<MainLayout />}>
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/category/:categoryId" element={<CategoryPage />} />
+          <Route path="/store/:sellerId" element={<SellerStorePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/deals" element={<DealsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth/google" element={<GoogleLoginPage />} />
+          <Route path="/auth/facebook" element={<FacebookLoginPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-        {/* SELLER REGISTER MUST COME BEFORE SELLER WILDCARD */}
-        <Route path="/seller/register" element={<SellerRegisterPage />} />
+          {/* SELLER REGISTER MUST COME BEFORE SELLER WILDCARD */}
+          <Route path="/seller/register" element={<SellerRegisterPage />} />
 
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/help" element={<HelpPage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/shipping-info" element={<ShippingInfoPage />} />
-        <Route path="/returns" element={<ReturnsPage />} />
-        <Route path="/security" element={<SecurityPage />} />
-        <Route path="/sitemap" element={<SitemapPage />} />
-        <Route path="/accessibility" element={<AccessibilityPage />} />
-        <Route path="/cookies" element={<CookiesPage />} />
-        <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-        <Route path="/unauthorized" element={<UnauthorizedPage />} />
-        <Route path="/price-match" element={<PriceMatchPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/shipping-info" element={<ShippingInfoPage />} />
+          <Route path="/returns" element={<ReturnsPage />} />
+          <Route path="/security" element={<SecurityPage />} />
+          <Route path="/sitemap" element={<SitemapPage />} />
+          <Route path="/accessibility" element={<AccessibilityPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/price-match" element={<PriceMatchPage />} />
 
-        {/* Protected Routes - Still inside MainLayout */}
-        <Route path="/cart" element={
-          <ProtectedRoute>
-            <CartPage />
+          {/* Protected Routes - Still inside MainLayout */}
+          <Route path="/cart" element={
+            <ProtectedRoute>
+              <CartPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <OrdersPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/wishlist" element={
+            <ProtectedRoute>
+              <WishlistPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <CheckoutPage />
+            </ProtectedRoute>
+          } />
+
+          {/* 404 inside MainLayout */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* DASHBOARD - Uses different layout (no MainLayout) */}
+        <Route path="/dashboard/*" element={
+          <ProtectedRoute requiredRole="buyer">
+            <DashboardLayout>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
+        {/* ADMIN - Uses different layout */}
+        <Route path="/admin/*" element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <Routes>
+                <Route path="/" element={<AdminPage />} />
+                <Route path="/users" element={<AdminPage />} />
+                <Route path="/products" element={<AdminPage />} />
+                <Route path="/transactions" element={<AdminPage />} />
+                <Route path="/reports" element={<AdminPage />} />
+                <Route path="/settings" element={<AdminPage />} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </Routes>
+            </AdminLayout>
           </ProtectedRoute>
         } />
 
-        <Route path="/orders" element={
-          <ProtectedRoute>
-            <OrdersPage />
+        {/* SELLER DASHBOARD - Uses different layout 
+            NOTE: This comes AFTER /seller/register */}
+        <Route path="/seller/*" element={
+          <ProtectedRoute requiredRole="seller">
+            <SellerLayout>
+              <Routes>
+                <Route path="/" element={<SellerDashboardPage />} />
+                <Route path="/dashboard" element={<SellerDashboardPage />} />
+                <Route path="/products" element={<SellerProducts />} />
+                <Route path="/orders" element={<SellerOrders />} />
+                <Route path="/categories" element={<SellerCategories />} />
+                <Route path="/analytics" element={<SellerAnalytics />} />
+                <Route path="/profile" element={<SellerProfile />} />
+                <Route path="*" element={<Navigate to="/seller" replace />} />
+                <Route path="/settings" element={<SellerSettings />} />
+              </Routes>
+            </SellerLayout>
           </ProtectedRoute>
         } />
+      </Routes>
+    </>
+  );
+};
 
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/wishlist" element={
-          <>
-            <ScrollToTop />
-            <Routes>
-              {/* MAIN LAYOUT FOR ALL PUBLIC PAGES */}
-              <Route element={<MainLayout />}>
-                {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/product/:id" element={<ProductDetailPage />} />
-                <Route path="/categories" element={<CategoriesPage />} />
-                <Route path="/category/:categoryId" element={<CategoryPage />} />
-                <Route path="/store/:sellerId" element={<SellerStorePage />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/deals" element={<DealsPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/auth/google" element={<GoogleLoginPage />} />
-                <Route path="/auth/facebook" element={<FacebookLoginPage />} />
-                <Route path="/verify-email" element={<VerifyEmailPage />} />
-
-                {/* SELLER REGISTER MUST COME BEFORE SELLER WILDCARD */}
-                <Route path="/seller/register" element={<SellerRegisterPage />} />
-
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/help" element={<HelpPage />} />
-                <Route path="/faq" element={<FAQPage />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
-                <Route path="/terms" element={<TermsPage />} />
-                <Route path="/shipping-info" element={<ShippingInfoPage />} />
-                <Route path="/returns" element={<ReturnsPage />} />
-                <Route path="/security" element={<SecurityPage />} />
-                <Route path="/sitemap" element={<SitemapPage />} />
-                <Route path="/accessibility" element={<AccessibilityPage />} />
-                <Route path="/cookies" element={<CookiesPage />} />
-                <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-                <Route path="/unauthorized" element={<UnauthorizedPage />} />
-                <Route path="/price-match" element={<PriceMatchPage />} />
-
-                {/* Protected Routes - Still inside MainLayout */}
-                <Route path="/cart" element={
-                  <ProtectedRoute>
-                    <CartPage />
-                  </ProtectedRoute>
-                } />
+export default AppRoutes;
