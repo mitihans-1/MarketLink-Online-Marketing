@@ -311,6 +311,115 @@ const switchToSeller = async (req, res) => {
     }
 };
 
+// @desc    Request password reset
+// @route   POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+
+        // Always respond with a generic message to avoid revealing whether the email exists
+        const genericResponse = { message: 'If an account with that email exists, you will receive a password reset email.' };
+
+        if (users.length === 0) {
+            return res.json(genericResponse);
+        }
+
+        const user = users[0];
+
+        // Generate token and store only a hash of it
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        // Invalidate previous tokens for this user
+        await db.query('UPDATE password_resets SET used = 1 WHERE user_id = ?', [user.id]);
+
+        await db.query(
+            'INSERT INTO password_resets (user_id, token_hash, expires_at, used) VALUES (?, ?, ?, ?)',
+            [user.id, tokenHash, expires, 0]
+        );
+
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&id=${user.id}`;
+
+        const message = `You requested a password reset. Click the link to reset your password: ${resetUrl}`;
+        const html = `
+            <h1>Password Reset</h1>
+            <p>If you requested this, click the button below to reset your password. If you didn't, you can safely ignore this email.</p>
+            <a href="${resetUrl}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        `;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'MarketLink - Password Reset',
+                message,
+                html
+            });
+        } catch (emailError) {
+            // Log but do not fail the request — still return generic response
+            console.error('Password reset email failed (non-critical):', emailError);
+        }
+
+        return res.json(genericResponse);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Reset password
+// @route   POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+    const { token, userId, password, confirmPassword } = req.body;
+
+    if (!token || !userId || !password || !confirmPassword) {
+        return res.status(400).json({ message: 'Invalid request' });
+    }
+
+    if (password !== confirmPassword) {
+        return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    // Basic strong password check: min 8, uppercase, lowercase, number
+    const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!pwRegex.test(password)) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters long and include uppercase, lowercase and a number' });
+    }
+
+    try {
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const [rows] = await db.query(
+            'SELECT * FROM password_resets WHERE user_id = ? AND token_hash = ? AND used = 0 AND expires_at > ?',
+            [userId, tokenHash, new Date()]
+        );
+
+        if (rows.length === 0) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+
+        const resetEntry = rows[0];
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Update user password
+        await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+
+        // Mark token used and invalidate any other active tokens
+        await db.query('UPDATE password_resets SET used = 1 WHERE id = ?', [resetEntry.id]);
+        await db.query('UPDATE password_resets SET used = 1 WHERE user_id = ? AND used = 0', [userId]);
+
+        res.json({ message: 'Password reset successful', success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
@@ -324,3 +433,6 @@ module.exports = {
     deleteUser,
     switchToSeller
 };
+
+module.exports.forgotPassword = forgotPassword;
+module.exports.resetPassword = resetPassword;

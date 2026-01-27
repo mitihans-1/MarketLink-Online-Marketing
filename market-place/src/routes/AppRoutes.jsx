@@ -15,6 +15,8 @@ import ProductsPage from '../pages/ProductsPage';
 import ProductDetailPage from '../pages/ProductDetailPage';
 import CartPage from '../pages/CartPage';
 import LoginPage from '../pages/LoginPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import RegisterPage from '../pages/RegisterPage';
 import DashboardPage from '../pages/DashboardPage';
 import AdminPage from '../pages/AdminPage';
