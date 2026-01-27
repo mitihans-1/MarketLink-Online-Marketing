@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   // Example stubs for social logins
   const googleLogin = async (googleData) => login(googleData);
-  const facebookLogin = async (facebookData) => login(facebookData);
+
 
   return (
     <AuthContext.Provider
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateProfile,
         googleLogin,
-        facebookLogin,
+
         loading,
         isAuthenticated: !!user
       }}

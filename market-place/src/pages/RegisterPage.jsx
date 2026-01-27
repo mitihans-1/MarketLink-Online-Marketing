@@ -5,7 +5,7 @@ import { useAuth } from '../context/useAuth';
 import { toast } from 'react-hot-toast';
 
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
-import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props';
+
 import axios from 'axios';
 
 const RegisterPageContent = () => {
@@ -25,36 +25,9 @@ const RegisterPageContent = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { register, googleLogin, facebookLogin } = useAuth();
+  const { register, googleLogin } = useAuth();
 
-  const handleFacebookResponse = async (response) => {
-    if (response.accessToken) {
-      const loadingToast = toast.loading('Connecting to Facebook...');
-      try {
-        const role = formData.accountType;
-        const result = await facebookLogin({
-          email: response.email,
-          name: response.name,
-          facebookId: response.userID,
-          avatar: response.picture?.data?.url || '',
-          role: role
-        });
 
-        toast.dismiss(loadingToast);
-
-        if (result.success) {
-          toast.success(`Welcome, ${result.name}!`);
-          navigate('/dashboard');
-        } else {
-          toast.error(result.message || 'Facebook registration failed');
-        }
-      } catch (err) {
-        toast.dismiss(loadingToast);
-        toast.error('An error occurred during Facebook registration');
-        console.error('Facebook registration error:', err);
-      }
-    }
-  };
 
   const loginToGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -247,7 +220,7 @@ const RegisterPageContent = () => {
   const strengthLabelColor = getStrengthLabelColor(pwdStrength.label);
 
   const socialLoginButtons = [
-    { id: 'facebook', label: 'Facebook', icon: 'f', color: 'text-blue-600' },
+
     { id: 'google', label: 'Google', icon: 'G', color: 'text-red-500' },
     { id: 'apple', label: 'Apple', icon: 'A', color: 'text-black' },
   ];
@@ -581,39 +554,7 @@ const RegisterPageContent = () => {
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Facebook Login - Uses Real Auth if App ID exists, otherwise Mock */}
-          {import.meta.env.VITE_FACEBOOK_APP_ID && import.meta.env.VITE_FACEBOOK_APP_ID !== 'your_facebook_app_id_here' ? (
-            <FacebookLogin
-              appId={import.meta.env.VITE_FACEBOOK_APP_ID}
-              autoLoad={false}
-              fields="name,email,picture"
-              callback={handleFacebookResponse}
-              render={renderProps => (
-                <button
-                  onClick={renderProps.onClick}
-                  className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-100 hover:-translate-y-1 transition-all duration-300 group"
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                  </div>
-                  <span className="text-gray-700 font-black text-sm">Facebook</span>
-                </button>
-              )}
-            />
-          ) : (
-            <button
-              onClick={() => handleMockLogin('facebook')}
-              className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-100 hover:-translate-y-1 transition-all duration-300 group"
-            >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-              </div>
-              <span className="text-gray-700 font-black text-sm">Facebook</span>
-            </button>
-          )}
+
 
           <button
             onClick={() => loginToGoogle()}

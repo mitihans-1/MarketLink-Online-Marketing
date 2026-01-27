@@ -86,23 +86,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const facebookLogin = useCallback(async (data) => {
-    try {
-      const result = await authService.facebookLogin(data);
-      if (result.success) {
-        const { token, success, message, ...userData } = result;
-        localStorage.setItem('marketplace_token', token);
-        localStorage.setItem('marketplace_user', JSON.stringify(userData));
-        setUser(userData);
-      }
-      return result;
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'Facebook Login failed'
-      };
-    }
-  }, []);
+
 
   const updateProfile = useCallback(async (profileData) => {
     try {
@@ -141,12 +125,12 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     googleLogin,
-    facebookLogin,
+
     updateProfile,
     switchToSeller,
     loading,
     isAuthenticated: !!user
-  }), [user, loading, login, logout, register, googleLogin, facebookLogin, updateProfile, switchToSeller]);
+  }), [user, loading, login, logout, register, googleLogin, updateProfile, switchToSeller]);
 
   return (
     <AuthContext.Provider value={value}>

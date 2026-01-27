@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, verifyEmail, googleAuth, facebookAuth, getUserProfile, updateUserProfile, getAllUsers, updateUserRole, deleteUser, switchToSeller, forgotPassword, verifyResetCode, resetPassword } = require('../controllers/authController');
+const { registerUser, loginUser, verifyEmail, googleAuth, getUserProfile, updateUserProfile, getAllUsers, updateUserRole, deleteUser, switchToSeller, forgotPassword, verifyResetCode, resetPassword } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/google', googleAuth);
-router.post('/facebook', facebookAuth);
+
 router.post('/switch-to-seller', protect, switchToSeller);
 router.get('/verify-email/:token', verifyEmail);
 

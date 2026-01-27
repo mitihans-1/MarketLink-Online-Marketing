@@ -49,17 +49,7 @@ const authService = {
         }
     },
 
-    facebookLogin: async (data) => {
-        try {
-            const response = await axiosInstance.post('/auth/facebook', data);
-            return { success: true, ...response.data };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Facebook Auth failed'
-            };
-        }
-    },
+
 
     logout: () => {
         localStorage.removeItem('marketplace_token');

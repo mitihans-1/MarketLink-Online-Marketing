@@ -162,44 +162,7 @@ const googleAuth = async (req, res) => {
     }
 };
 
-// @desc    Authenticate with Facebook
-// @route   POST /api/auth/facebook
-const facebookAuth = async (req, res) => {
-    const { email, name, avatar, role } = req.body;
 
-    try {
-        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-        let user = users[0];
-
-        if (!user) {
-            const generatedPassword = Math.random().toString(36).slice(-8);
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(generatedPassword, salt);
-
-            const [result] = await db.query(
-                'INSERT INTO users (name, email, password, role, is_verified, avatar) VALUES (?, ?, ?, ?, ?, ?)',
-                [name || email.split('@')[0], email, hashedPassword, role || 'user', true, avatar || '']
-            );
-
-            const [newUsers] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
-            user = newUsers[0];
-        }
-
-        res.json({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            avatar: user.avatar,
-            token: generateToken(user.id),
-            success: true
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
 
 /**
  * @swagger
@@ -570,7 +533,7 @@ module.exports = {
     loginUser,
     verifyEmail,
     googleAuth,
-    facebookAuth,
+
     getUserProfile,
     updateUserProfile,
     getAllUsers,

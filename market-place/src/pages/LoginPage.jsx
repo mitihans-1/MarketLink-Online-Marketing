@@ -4,7 +4,7 @@ import { useAuth } from '../context/useAuth';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
-import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props';
+
 import axios from 'axios';
 
 const LoginPageContent = () => {
@@ -16,7 +16,7 @@ const LoginPageContent = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, googleLogin, facebookLogin } = useAuth();
+  const { login, googleLogin } = useAuth();
 
   // Get the page they wanted to go to before login
   const from = location.state?.from?.pathname || '/dashboard';
@@ -76,38 +76,7 @@ const LoginPageContent = () => {
     }
   };
 
-  const handleFacebookResponse = async (response) => {
-    if (response.accessToken) {
-      setLoading(true);
-      const loadingToast = toast.loading('Authenticating with Facebook...');
 
-      try {
-        const result = await facebookLogin({
-          email: response.email,
-          name: response.name,
-          facebookId: response.userID,
-          avatar: response.picture?.data?.url || '',
-          role: 'buyer' // Default role for social login
-        });
-
-        toast.dismiss(loadingToast);
-
-        if (result.success) {
-          toast.success(`Welcome back, ${result.name}!`);
-          navigate(getRedirectPath(result.role), { replace: true });
-        } else {
-          setError(result.message || 'Facebook login failed');
-          toast.error(result.message || 'Facebook login failed');
-        }
-      } catch (err) {
-        toast.dismiss(loadingToast);
-        setError('An error occurred during Facebook login');
-        console.error('Facebook login error:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
 
   const loginToGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -225,9 +194,6 @@ const LoginPageContent = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-semibold text-gray-700">Password</label>
-                <Link to="/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-                  Forgot?
-                </Link>
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -250,6 +216,11 @@ const LoginPageContent = () => {
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
+              </div>
+              <div className="flex justify-end mt-2">
+                <Link to="/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                  Forgot password?
+                </Link>
               </div>
             </div>
 
@@ -304,11 +275,11 @@ const LoginPageContent = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex justify-center">
               <button
                 onClick={() => loginToGoogle()}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 w-full"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -318,25 +289,6 @@ const LoginPageContent = () => {
                 </svg>
                 <span>Google</span>
               </button>
-
-              <FacebookLogin
-                appId={import.meta.env.VITE_FACEBOOK_APP_ID}
-                autoLoad={false}
-                fields="name,email,picture"
-                callback={handleFacebookResponse}
-                render={renderProps => (
-                  <button
-                    onClick={renderProps.onClick}
-                    disabled={loading}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
-                  >
-                    <svg className="w-5 h-5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                    <span>Facebook</span>
-                  </button>
-                )}
-              />
             </div>
           </div>
 
